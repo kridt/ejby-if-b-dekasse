@@ -1,6 +1,7 @@
 "use client";
 
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import { motion, type HTMLMotionProps } from "motion/react";
 import { initials } from "@/lib/format";
 
 export function cn(...classes: (string | false | null | undefined)[]) {
@@ -14,10 +15,15 @@ export function Button({
   className,
   children,
   loading,
+  disabled,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; loading?: boolean }) {
+}: Omit<HTMLMotionProps<"button">, "children"> & {
+  variant?: Variant;
+  loading?: boolean;
+  children?: ReactNode;
+}) {
   const base =
-    "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none";
+    "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-50 disabled:pointer-events-none";
   const variants: Record<Variant, string> = {
     primary: "bg-primary text-primary-foreground hover:bg-primary-dark shadow-sm",
     secondary: "bg-white text-foreground border border-border hover:bg-background",
@@ -25,16 +31,30 @@ export function Button({
     ghost: "text-muted hover:bg-background",
   };
   return (
-    <button className={cn(base, variants[variant], className)} disabled={loading || props.disabled} {...props}>
+    <motion.button
+      whileTap={{ scale: 0.96 }}
+      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      className={cn(base, variants[variant], className)}
+      disabled={loading || disabled}
+      {...props}
+    >
       {loading && <Spinner className="size-4" />}
       {children}
-    </button>
+    </motion.button>
   );
 }
 
-export function Card({ className, children }: { className?: string; children: ReactNode }) {
+export function Card({
+  className,
+  children,
+  raised,
+}: {
+  className?: string;
+  children: ReactNode;
+  raised?: boolean;
+}) {
   return (
-    <div className={cn("rounded-2xl bg-card border border-border p-4 shadow-sm", className)}>
+    <div className={cn("rounded-2xl border border-border bg-card p-4", raised ? "shadow-raised" : "shadow-sm", className)}>
       {children}
     </div>
   );
@@ -86,11 +106,33 @@ export function Label({ children, htmlFor }: { children: ReactNode; htmlFor?: st
   );
 }
 
-export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
+export function Avatar({
+  name,
+  size = 40,
+  ring,
+  vtName,
+  className,
+}: {
+  name: string;
+  size?: number;
+  ring?: "gold" | "silver" | "bronze";
+  vtName?: string;
+  className?: string;
+}) {
+  const ringColor =
+    ring === "gold" ? "var(--gold)" : ring === "silver" ? "var(--silver)" : ring === "bronze" ? "var(--bronze)" : undefined;
   return (
     <div
-      className="flex shrink-0 items-center justify-center rounded-full bg-primary/10 font-bold text-primary"
-      style={{ width: size, height: size, fontSize: size * 0.38 }}
+      className={cn("flex shrink-0 items-center justify-center rounded-full bg-primary/10 font-bold text-primary", className)}
+      style={
+        {
+          width: size,
+          height: size,
+          fontSize: size * 0.38,
+          ...(ringColor ? { boxShadow: `0 0 0 2px var(--card), 0 0 0 4px ${ringColor}` } : {}),
+          ...(vtName ? { viewTransitionName: vtName } : {}),
+        } as React.CSSProperties
+      }
     >
       {initials(name)}
     </div>
@@ -138,6 +180,16 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
   );
 }
 
+/** Egetræs-blad fra klubbens crest — brugt som svagt vandmærke i tomme tilstande. */
+export function OakLeaf({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M12 2c.55 1.3.4 2.5-.2 3.5.85-.3 1.7-.2 2.5.25-.5.95-1.25 1.55-2 1.85.95.2 1.8.75 2.3 1.6-.85.4-1.8.4-2.6.1.65.8.95 1.85.75 2.85-.95-.2-1.75-.8-2.2-1.6-.1.95-.55 1.9-1.35 2.5-.8-.6-1.25-1.55-1.35-2.5-.45.8-1.25 1.4-2.2 1.6-.2-1 .1-2.05.75-2.85-.8.3-1.75.3-2.6-.1.5-.85 1.35-1.4 2.3-1.6-.75-.3-1.5-.9-2-1.85.8-.45 1.65-.55 2.5-.25-.6-1-.75-2.2-.2-3.5z" />
+      <path d="M12 12.5V22" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
 export function EmptyState({
   title,
   hint,
@@ -148,9 +200,10 @@ export function EmptyState({
   icon?: ReactNode;
 }) {
   return (
-    <Card className="flex flex-col items-center px-6 py-8 text-center text-muted">
+    <Card className="relative flex flex-col items-center overflow-hidden px-6 py-8 text-center text-muted">
+      <OakLeaf className="pointer-events-none absolute -right-3 -top-2 size-24 text-primary/5" />
       {icon && (
-        <div className="mb-3 flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+        <div className="relative mb-3 flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
           {icon}
         </div>
       )}
