@@ -8,6 +8,17 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
+// iOS launch-splash pr. enhed (device-px-filer i /public/splash).
+const splashDevices: Array<[number, number, number]> = [
+  [440, 956, 3], [430, 932, 3], [402, 874, 3], [393, 852, 3], [390, 844, 3],
+  [375, 812, 3], [414, 896, 3], [414, 896, 2], [375, 667, 2],
+  [1024, 1366, 2], [834, 1194, 2], [820, 1180, 2], [810, 1080, 2], [768, 1024, 2],
+];
+const APPLE_SPLASH = splashDevices.map(([w, h, dpr]) => ({
+  url: `/splash/apple-splash-${w * dpr}x${h * dpr}.png`,
+  media: `(device-width: ${w}px) and (device-height: ${h}px) and (-webkit-device-pixel-ratio: ${dpr}) and (orientation: portrait)`,
+}));
+
 export const metadata: Metadata = {
   title: "Ejby IF Bødekasse",
   description: "Bødekassen for Ejby IF — giv bøder, betal og se tavlen.",
@@ -18,8 +29,8 @@ export const metadata: Metadata = {
     // safe-area-toppen (statuslinjeteksten holdes læsbar mod den grønne bjælke).
     statusBarStyle: "black-translucent",
     title: "Ejby Bødekasse",
-    // TODO (vedligeholder): generér apple-touch-startup-image splash-PNG'er
-    // (crest-på-grøn, lys+mørk) og tilføj dem her som startupImage: [...].
+    // Splash-skærme (crest-på-grøn) — ingen hvid blink ved launch fra hjemmeskærm.
+    startupImage: APPLE_SPLASH,
   },
   manifest: "/manifest.webmanifest",
   // Sikrer at moderne Chrome også får web-app-capable (Next udsender allerede
