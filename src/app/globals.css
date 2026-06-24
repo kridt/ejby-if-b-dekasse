@@ -1,26 +1,81 @@
 @import "tailwindcss";
 
+/* ===== Ejby IF Bødekasse — grøn/hvid tema ===== */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f4f7f4;
+  --foreground: #0e1a12;
+  --card: #ffffff;
+  --border: #e2e8e3;
+  --muted: #6b7c70;
+
+  /* Klubfarver — fra Ejby IF Fodbold-logoet */
+  --primary: #0e4d2a; /* Ejby dyb skovgrøn */
+  --primary-dark: #09361d;
+  --primary-light: #1b7a44;
+  --primary-foreground: #ffffff;
+
+  --danger: #d33a3a; /* skyldnere / ubetalt */
+  --danger-bg: #fdecec;
+  --success: #157f3c;
+  --warning: #c98a09;
+  --warning-bg: #fdf6e3;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-light: var(--primary-light);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --radius: 0.9rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  min-height: 100dvh;
+  /* Plads til bundnavigation på PWA */
+  padding-bottom: env(safe-area-inset-bottom);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Pæn fokus-ring */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0b1410;
+    --foreground: #eaf2ec;
+    --card: #14201a;
+    --border: #243029;
+    --muted: #93a699;
+    --primary: #2f9e5a;
+    --primary-dark: #0e4d2a;
+    --primary-light: #4cc873;
+    --danger: #f06565;
+    --danger-bg: #2a1717;
+    --warning-bg: #2a2310;
+  }
 }

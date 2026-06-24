@@ -1,0 +1,97 @@
+rules_version = '2';
+
+// Sikkerhedsregler for Ejby IF Bødekasse
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function bootstrapExists() {
+      return exists(/databases/$(database)/documents/settings/bootstrap);
+    }
+
+    // ---- Brugere ----
+    match /users/{uid} {
+      allow read: if isSignedIn();
+
+      // Man kan kun oprette sin egen profil. Rollen skal være 'member' —
+      // medmindre man er den allerførste bruger (så bliver man admin).
+      allow create: if isSignedIn()
+        && request.auth.uid == uid
+        && (
+          request.resource.data.role == 'member'
+          || (request.resource.data.role == 'admin' && !bootstrapExists())
+        );
+
+      // Egen profil må redigeres, men man kan ikke ændre sin egen rolle.
+      // Admins må ændre roller (gøre andre til admin).
+      allow update: if isSignedIn() && (
+        (request.auth.uid == uid && request.resource.data.role == resource.data.role)
+        || isAdmin()
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    // ---- Bootstrap (markerer at første admin er oprettet) ----
+    match /settings/bootstrap {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && !bootstrapExists();
+      allow update, delete: if false;
+    }
+
+    // ---- Klubindstillinger (MobilePay m.m.) ----
+    match /settings/club {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ---- Bødekatalog ----
+    match /fineCatalog/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ---- Bøder ----
+    match /fines/{id} {
+      allow read: if isSignedIn();
+
+      // Alle medlemmer kan foreslå en bøde — altid som 'pending',
+      // og altid registreret med eget uid som forslagsstiller.
+      allow create: if isSignedIn()
+        && request.resource.data.proposedByUid == request.auth.uid
+        && request.resource.data.status == 'pending';
+
+      // Kun admins godkender, justerer beløb eller afviser.
+      // (Godkendte bøder kan ikke annulleres — håndhæves i UI.)
+      allow update, delete: if isAdmin();
+    }
+
+    // ---- Betalinger ----
+    match /payments/{id} {
+      allow read: if isSignedIn();
+
+      // Spilleren kan kun registrere sin egen betaling som 'claimed'.
+      allow create: if isSignedIn()
+        && request.resource.data.payerUid == request.auth.uid
+        && request.resource.data.status == 'claimed';
+
+      // Kun admins bekræfter eller afviser betalinger.
+      allow update, delete: if isAdmin();
+    }
+
+    // ---- Sæsoner ----
+    match /seasons/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}

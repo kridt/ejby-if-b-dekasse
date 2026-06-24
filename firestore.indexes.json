@@ -1,0 +1,13 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "fineCatalog",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "active", "order": "ASCENDING" },
+        { "fieldPath": "sortOrder", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
