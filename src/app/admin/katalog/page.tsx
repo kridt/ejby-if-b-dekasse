@@ -4,8 +4,9 @@ import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Button, Card, EmptyState, Input, Label, PageHeader, Spinner, cn } from "@/components/ui";
 import { useCatalog } from "@/hooks/useFirestore";
-import { addCatalogItem, updateCatalogItem } from "@/lib/data";
+import { addCatalogItem, deleteCatalogItem, swapCatalogOrder, updateCatalogItem } from "@/lib/data";
 import { formatKr } from "@/lib/format";
+import type { CatalogItem } from "@/lib/types";
 
 const STARTER = [
   { title: "For sent til træning", defaultAmount: 20 },
@@ -88,23 +89,131 @@ export default function CatalogPage() {
         </div>
       ) : (
         <div className="space-y-2">
-          {catalog.map((item) => (
-            <Card key={item.id} className={cn("flex items-center gap-3", !item.active && "opacity-50")}>
-              <div className="flex-1">
-                <p className="font-semibold">{item.title}</p>
-                <p className="text-sm text-primary">{formatKr(item.defaultAmount)}</p>
-              </div>
-              <Button
-                variant="ghost"
-                className="text-xs"
-                onClick={() => updateCatalogItem(item.id, { active: !item.active })}
-              >
-                {item.active ? "Skjul" : "Vis"}
-              </Button>
-            </Card>
+          {catalog.map((item, i) => (
+            <CatalogRow
+              key={item.id}
+              item={item}
+              isFirst={i === 0}
+              isLast={i === catalog.length - 1}
+              onMoveUp={() => swapCatalogOrder(item, catalog[i - 1])}
+              onMoveDown={() => swapCatalogOrder(item, catalog[i + 1])}
+            />
           ))}
         </div>
       )}
     </AppShell>
+  );
+}
+
+function CatalogRow({
+  item,
+  isFirst,
+  isLast,
+  onMoveUp,
+  onMoveDown,
+}: {
+  item: CatalogItem;
+  isFirst: boolean;
+  isLast: boolean;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState(item.title);
+  const [amount, setAmount] = useState(String(item.defaultAmount));
+  const [busy, setBusy] = useState(false);
+
+  async function save() {
+    if (!title.trim() || !Number(amount)) return;
+    setBusy(true);
+    try {
+      await updateCatalogItem(item.id, { title: title.trim(), defaultAmount: Number(amount) });
+      setEditing(false);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function cancel() {
+    setTitle(item.title);
+    setAmount(String(item.defaultAmount));
+    setEditing(false);
+  }
+
+  async function remove() {
+    if (!confirm(`Slet bøden «${item.title}» fra kataloget? Allerede udskrevne bøder påvirkes ikke.`)) return;
+    setBusy(true);
+    try {
+      await deleteCatalogItem(item.id);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (editing) {
+    return (
+      <Card className="space-y-3">
+        <div>
+          <Label htmlFor={`t-${item.id}`}>Bøde</Label>
+          <Input id={`t-${item.id}`} value={title} onChange={(e) => setTitle(e.target.value)} />
+        </div>
+        <div>
+          <Label htmlFor={`a-${item.id}`}>Standardbeløb (kr.)</Label>
+          <Input id={`a-${item.id}`} type="number" inputMode="numeric" min={1} value={amount} onChange={(e) => setAmount(e.target.value)} />
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={save} loading={busy} disabled={!title.trim() || !Number(amount)} className="flex-1">
+            Gem
+          </Button>
+          <Button variant="secondary" onClick={cancel} className="flex-1">
+            Annullér
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className={cn("flex items-center gap-2", !item.active && "opacity-50")}>
+      <div className="flex flex-col">
+        <button
+          type="button"
+          onClick={onMoveUp}
+          disabled={isFirst}
+          aria-label="Flyt op"
+          className="px-1 text-muted disabled:opacity-30 hover:text-primary"
+        >
+          ▲
+        </button>
+        <button
+          type="button"
+          onClick={onMoveDown}
+          disabled={isLast}
+          aria-label="Flyt ned"
+          className="px-1 text-muted disabled:opacity-30 hover:text-primary"
+        >
+          ▼
+        </button>
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-semibold">{item.title}</p>
+        <p className="text-sm text-primary">{formatKr(item.defaultAmount)}</p>
+      </div>
+      <div className="flex shrink-0 items-center">
+        <Button variant="ghost" className="text-xs" onClick={() => setEditing(true)}>
+          Redigér
+        </Button>
+        <Button
+          variant="ghost"
+          className="text-xs"
+          onClick={() => updateCatalogItem(item.id, { active: !item.active })}
+        >
+          {item.active ? "Skjul" : "Vis"}
+        </Button>
+        <Button variant="ghost" className="text-xs text-danger" onClick={remove} loading={busy}>
+          Slet
+        </Button>
+      </div>
+    </Card>
   );
 }
