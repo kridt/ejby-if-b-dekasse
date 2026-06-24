@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { ClubLogo } from "@/components/ClubLogo";
-import { Avatar, Badge, Card, EmptyState, Spinner, cn } from "@/components/ui";
+import { Avatar, Badge, Card, EmptyState, SkeletonList, cn } from "@/components/ui";
+import { HowItWorks } from "@/components/HowItWorks";
 import { useAuth } from "@/context/AuthContext";
 import {
   useApprovedFines,
@@ -60,16 +61,24 @@ export default function BoardPage() {
       </header>
 
       {/* Sæson / alle tider */}
-      <div className="mb-4 inline-flex rounded-xl border border-border bg-card p-1 text-sm font-semibold">
+      <div
+        className="mb-4 inline-flex rounded-xl border border-border bg-card p-1 text-sm font-semibold"
+        role="group"
+        aria-label="Vælg periode"
+      >
         <button
+          type="button"
           onClick={() => setScope("season")}
-          className={cn("rounded-lg px-3 py-1.5", scope === "season" ? "bg-primary text-white" : "text-muted")}
+          aria-pressed={scope === "season"}
+          className={cn("rounded-lg px-3 py-1.5 transition", scope === "season" ? "bg-primary text-white" : "text-muted")}
         >
           {season?.name ?? "Denne sæson"}
         </button>
         <button
+          type="button"
           onClick={() => setScope("all")}
-          className={cn("rounded-lg px-3 py-1.5", scope === "all" ? "bg-primary text-white" : "text-muted")}
+          aria-pressed={scope === "all"}
+          className={cn("rounded-lg px-3 py-1.5 transition", scope === "all" ? "bg-primary text-white" : "text-muted")}
         >
           Alle tider
         </button>
@@ -82,7 +91,11 @@ export default function BoardPage() {
       </div>
 
       {/* Faner */}
-      <div className="mb-4 grid grid-cols-3 gap-1 rounded-xl border border-border bg-card p-1 text-xs font-semibold">
+      <div
+        className="mb-4 grid grid-cols-3 gap-1 rounded-xl border border-border bg-card p-1 text-xs font-semibold"
+        role="tablist"
+        aria-label="Tavle-visninger"
+      >
         <TabButton active={tab === "skyldnere"} onClick={() => setTab("skyldnere")}>
           Skyldnere
         </TabButton>
@@ -95,25 +108,29 @@ export default function BoardPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-10 text-primary">
-          <Spinner className="size-7" />
-        </div>
+        <SkeletonList rows={5} />
       ) : tab === "skyldnere" ? (
         <RankList
           rows={debtors}
-          empty="Ingen skylder noget lige nu 🎉"
+          emptyTitle="Ingen skylder noget lige nu"
+          emptyHint="Hele holdet er betalt op 🎉"
+          emptyIcon={<CheckIcon />}
           render={(b) => <span className="font-bold text-danger">{formatKr(b.balance)}</span>}
         />
       ) : tab === "betalere" ? (
         <RankList
           rows={topPayers}
-          empty="Ingen betalinger endnu"
+          emptyTitle="Ingen betalinger endnu"
+          emptyHint="Når nogen betaler, dukker de op her."
+          emptyIcon={<CoinIcon />}
           render={(b) => <span className="font-bold text-primary">{formatKr(b.totalPaid)}</span>}
         />
       ) : (
         <RankList
           rows={mostFined}
-          empty="Ingen bøder endnu"
+          emptyTitle="Ingen bøder endnu"
+          emptyHint="Bødekassen er helt tom — indtil videre."
+          emptyIcon={<WhistleIcon />}
           render={(b) => (
             <span className="font-bold">
               {b.fineCount} <span className="text-muted">bøder</span>
@@ -121,6 +138,10 @@ export default function BoardPage() {
           )}
         />
       )}
+
+      <div className="mt-6">
+        <HowItWorks />
+      </div>
     </AppShell>
   );
 }
@@ -149,6 +170,9 @@ function StatCard({
 function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button
+      type="button"
+      role="tab"
+      aria-selected={active}
       onClick={onClick}
       className={cn("rounded-lg px-2 py-2 transition", active ? "bg-primary text-white" : "text-muted")}
     >
@@ -159,14 +183,18 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
 
 function RankList({
   rows,
-  empty,
+  emptyTitle,
+  emptyHint,
+  emptyIcon,
   render,
 }: {
   rows: PlayerBalance[];
-  empty: string;
+  emptyTitle: string;
+  emptyHint?: string;
+  emptyIcon?: React.ReactNode;
   render: (b: PlayerBalance) => React.ReactNode;
 }) {
-  if (rows.length === 0) return <EmptyState title={empty} />;
+  if (rows.length === 0) return <EmptyState title={emptyTitle} hint={emptyHint} icon={emptyIcon} />;
   return (
     <div className="space-y-2">
       {rows.map((b, i) => (
@@ -185,5 +213,32 @@ function RankList({
         </Card>
       ))}
     </div>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20 6L9 17l-5-5" />
+    </svg>
+  );
+}
+
+function CoinIcon() {
+  return (
+    <svg className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M14.5 9.5a2.5 2.5 0 0 0-2.5-1.5c-1.4 0-2.5.8-2.5 2s1.1 2 2.5 2 2.5.8 2.5 2-1.1 2-2.5 2a2.5 2.5 0 0 1-2.5-1.5M12 6.5v1M12 16.5v1" />
+    </svg>
+  );
+}
+
+function WhistleIcon() {
+  return (
+    <svg className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 12a5 5 0 0 0 5 5h3l4 3v-6.5" />
+      <circle cx="8" cy="12" r="2.2" />
+      <path d="M11 9h10l-2 4h-8" />
+    </svg>
   );
 }

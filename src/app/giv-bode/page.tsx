@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { Avatar, Button, Card, EmptyState, Label, PageHeader, Select, Spinner, Textarea, cn } from "@/components/ui";
+import { Avatar, Button, Card, EmptyState, Label, PageHeader, Select, SkeletonList, Textarea, cn } from "@/components/ui";
+import { useToast } from "@/components/Toast";
 import { useAuth } from "@/context/AuthContext";
 import { useActiveCatalog, useCurrentSeason, useUsers } from "@/hooks/useFirestore";
 import { proposeFine } from "@/lib/data";
@@ -20,6 +21,7 @@ export default function GivBodePage() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
+  const toast = useToast();
 
   const teammates = useMemo(
     () => users.filter((u) => u.uid !== profile?.uid),
@@ -48,9 +50,11 @@ export default function GivBodePage() {
         seasonId: season.id,
       });
       setDone(true);
+      toast.success("Bøde sendt til godkendelse");
     } catch (err) {
       console.error(err);
       setError("Kunne ikke sende bøden. Prøv igen.");
+      toast.error("Kunne ikke sende bøden. Prøv igen.");
     } finally {
       setBusy(false);
     }
@@ -86,9 +90,7 @@ export default function GivBodePage() {
       <PageHeader title="Giv en bøde" subtitle="Alle bøder skal godkendes af en admin" />
 
       {lu || lc ? (
-        <div className="flex justify-center py-10 text-primary">
-          <Spinner className="size-7" />
-        </div>
+        <SkeletonList rows={4} />
       ) : catalog.length === 0 ? (
         <EmptyState title="Bødekataloget er tomt" hint="En admin skal oprette bøder i kataloget først." />
       ) : (

@@ -138,12 +138,61 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
   );
 }
 
-export function EmptyState({ title, hint }: { title: string; hint?: string }) {
+export function EmptyState({
+  title,
+  hint,
+  icon,
+}: {
+  title: string;
+  hint?: string;
+  icon?: ReactNode;
+}) {
   return (
-    <Card className="text-center text-muted">
-      <p className="font-medium">{title}</p>
+    <Card className="flex flex-col items-center px-6 py-8 text-center text-muted">
+      {icon && (
+        <div className="mb-3 flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+          {icon}
+        </div>
+      )}
+      <p className="font-semibold text-foreground">{title}</p>
       {hint && <p className="mt-1 text-sm">{hint}</p>}
     </Card>
+  );
+}
+
+/** Animeret skelet-pladsholder (shimmer) til indlæsningstilstande. */
+export function Skeleton({ className }: { className?: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={cn("animate-pulse rounded-lg bg-foreground/10", className)}
+    />
+  );
+}
+
+/** En skelet-række der matcher kort-layoutet på tavle/profil. */
+export function SkeletonRow() {
+  return (
+    <Card className="flex items-center gap-3 py-3" aria-hidden="true">
+      <Skeleton className="size-9 rounded-full" />
+      <div className="flex-1 space-y-2">
+        <Skeleton className="h-3.5 w-2/5" />
+        <Skeleton className="h-3 w-1/4" />
+      </div>
+      <Skeleton className="h-4 w-14" />
+    </Card>
+  );
+}
+
+/** Liste af skelet-rækker med tilgængelig status-besked. */
+export function SkeletonList({ rows = 5 }: { rows?: number }) {
+  return (
+    <div className="space-y-2" role="status" aria-live="polite" aria-busy="true">
+      <span className="sr-only">Indlæser…</span>
+      {Array.from({ length: rows }).map((_, i) => (
+        <SkeletonRow key={i} />
+      ))}
+    </div>
   );
 }
 

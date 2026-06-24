@@ -37,7 +37,10 @@ export function AppShell({ children, admin = false }: { children: ReactNode; adm
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col">
       <main className="flex-1 px-4 pb-28 pt-6">{children}</main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur">
+      <nav
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur"
+        aria-label="Hovednavigation"
+      >
         <div className="mx-auto grid max-w-md grid-cols-4">
           {items.map((item) => {
             const active =
@@ -47,12 +50,14 @@ export function AppShell({ children, admin = false }: { children: ReactNode; adm
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex flex-col items-center gap-1 py-2.5 text-xs font-medium transition",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
                   active ? "text-primary" : "text-muted"
                 )}
               >
-                <Icon className={cn("size-6", active && "scale-110")} />
+                <Icon className={cn("size-6 transition-transform", active && "scale-110")} aria-hidden="true" />
                 {item.label}
               </Link>
             );
