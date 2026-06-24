@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useActiveCatalog, useCurrentSeason, useUsers } from "@/hooks/useFirestore";
 import { proposeFine } from "@/lib/data";
 import { formatKr } from "@/lib/format";
+import { sendNotify } from "@/lib/notify";
 
 export default function GivBodePage() {
   const { profile } = useAuth();
@@ -47,6 +48,12 @@ export default function GivBodePage() {
         comment: comment.trim(),
         seasonId: season.id,
       });
+      // Notificér admins om den nye bøde (ikke-blokerende).
+      try {
+        await sendNotify({ type: "fine-proposed" });
+      } catch (err) {
+        console.warn("Kunne ikke sende notifikation til admins:", err);
+      }
       setDone(true);
     } catch (err) {
       console.error(err);

@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useClaimedPayments, usePendingFines } from "@/hooks/useFirestore";
 import { approveFine, confirmPayment, rejectFine, rejectPayment } from "@/lib/data";
 import { formatDateTime, formatKr } from "@/lib/format";
+import { sendNotify } from "@/lib/notify";
 import type { Fine } from "@/lib/types";
 
 type View = "fines" | "payments";
@@ -88,6 +89,12 @@ function FineApprovalCard({ fine, adminUid }: { fine: Fine; adminUid: string }) 
     setBusy(true);
     try {
       await approveFine(fine.id, adminUid, Number(amount) || fine.amount);
+      // Notificér den bødede spiller (ikke-blokerende).
+      try {
+        await sendNotify({ type: "fine-approved", fineId: fine.id });
+      } catch (err) {
+        console.warn("Kunne ikke sende notifikation til spilleren:", err);
+      }
     } finally {
       setBusy(false);
     }

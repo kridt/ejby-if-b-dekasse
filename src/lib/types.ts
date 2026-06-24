@@ -10,6 +10,8 @@ export interface UserProfile {
   role: Role;
   photoURL?: string;
   createdAt?: Timestamp;
+  /** FCM-registreringstokens for push-notifikationer (én pr. enhed/browser). */
+  fcmTokens?: string[];
 }
 
 export interface CatalogItem {

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { PushToggle } from "@/components/PushToggle";
 import { Avatar, Badge, Button, Card, EmptyState, Input, Label, Spinner } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -12,6 +13,7 @@ import {
 } from "@/hooks/useFirestore";
 import { claimPayment } from "@/lib/data";
 import { formatDateTime, formatKr } from "@/lib/format";
+import { sendNotify } from "@/lib/notify";
 
 export default function ProfilePage() {
   const { profile, logout, isAdmin } = useAuth();
@@ -41,6 +43,12 @@ export default function ProfilePage() {
     setBusy(true);
     try {
       await claimPayment(profile, amt, season.id);
+      // Notificér admins (ikke-blokerende — betalingen er allerede gemt).
+      try {
+        await sendNotify({ type: "payment-claimed" });
+      } catch (err) {
+        console.warn("Kunne ikke sende notifikation til admins:", err);
+      }
       setAmount("");
       setMsg("Tak! Din betaling afventer nu bekræftelse fra en admin.");
     } catch (err) {
@@ -146,6 +154,9 @@ export default function ProfilePage() {
             ))}
         </div>
       )}
+
+      {/* Push-notifikationer */}
+      <PushToggle />
 
       <Button variant="secondary" className="mt-8 w-full" onClick={() => logout()}>
         Log ud
