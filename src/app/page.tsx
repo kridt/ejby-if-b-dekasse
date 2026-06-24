@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { ClubLogo } from "@/components/ClubLogo";
 import { Avatar, Badge, Card, EmptyState, Spinner, cn } from "@/components/ui";
@@ -170,19 +171,21 @@ function RankList({
   return (
     <div className="space-y-2">
       {rows.map((b, i) => (
-        <Card key={b.uid} className="flex items-center gap-3 py-3">
-          <div className="w-6 text-center text-sm font-bold text-muted">{i + 1}</div>
-          <Avatar name={b.name} size={38} />
-          <div className="flex-1 min-w-0">
-            <p className="truncate font-semibold">{b.name}</p>
-            {b.balance > 0 ? (
-              <Badge tone="danger">Skylder</Badge>
-            ) : b.totalFined > 0 ? (
-              <Badge tone="success">Betalt op</Badge>
-            ) : null}
-          </div>
-          <div className="text-right">{render(b)}</div>
-        </Card>
+        <Link key={b.uid} href={`/spiller/${b.uid}`} className="block">
+          <Card className="flex items-center gap-3 py-3 transition hover:border-primary/40">
+            <div className="w-6 text-center text-sm font-bold text-muted">{i + 1}</div>
+            <Avatar name={b.name} size={38} />
+            <div className="flex-1 min-w-0">
+              <p className="truncate font-semibold">{b.name}</p>
+              {b.balance > 0 ? (
+                <Badge tone="danger">Skylder</Badge>
+              ) : b.totalFined > 0 ? (
+                <Badge tone="success">Betalt op</Badge>
+              ) : null}
+            </div>
+            <div className="text-right">{render(b)}</div>
+          </Card>
+        </Link>
       ))}
     </div>
   );

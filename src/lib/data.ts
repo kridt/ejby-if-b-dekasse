@@ -77,6 +77,23 @@ export async function updateCatalogItem(id: string, patch: Partial<CatalogItem>)
   await updateDoc(doc(db, "fineCatalog", id), patch);
 }
 
+/** Sletter en bøde fra kataloget. Eksisterende bøder beholder deres egen reason/amount-kopi. */
+export async function deleteCatalogItem(id: string) {
+  const { deleteDoc } = await import("firebase/firestore");
+  await deleteDoc(doc(db, "fineCatalog", id));
+}
+
+/**
+ * Bytter rækkefølgen på to katalogbøder ved at ombytte deres sortOrder.
+ * Bruges til "flyt op/ned" i admin-kataloget.
+ */
+export async function swapCatalogOrder(a: CatalogItem, b: CatalogItem) {
+  const batch = writeBatch(db);
+  batch.update(doc(db, "fineCatalog", a.id), { sortOrder: b.sortOrder });
+  batch.update(doc(db, "fineCatalog", b.id), { sortOrder: a.sortOrder });
+  await batch.commit();
+}
+
 // ---- Bøder ----
 /** Et medlem foreslår en bøde til en holdkammerat (status: pending). */
 export async function proposeFine(params: {
@@ -130,6 +147,29 @@ export async function claimPayment(payer: UserProfile, amount: number, seasonId:
     method: "mobilepay",
     seasonId,
     claimedAt: serverTimestamp(),
+  });
+}
+
+/**
+ * Admin registrerer en betaling på en spillers vegne (fx kontant/MobilePay-afstemning).
+ * Betalingen oprettes direkte som bekræftet.
+ */
+export async function adminRegisterPayment(
+  payer: UserProfile,
+  amount: number,
+  adminUid: string,
+  seasonId: string
+) {
+  await addDoc(paymentsCol, {
+    payerUid: payer.uid,
+    payerName: payer.displayName,
+    amount,
+    status: "confirmed",
+    method: "mobilepay",
+    seasonId,
+    confirmedByUid: adminUid,
+    claimedAt: serverTimestamp(),
+    confirmedAt: serverTimestamp(),
   });
 }
 

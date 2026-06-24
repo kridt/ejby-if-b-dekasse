@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { Avatar, Badge, Button, Card, Input, Label, PageHeader, Spinner } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
@@ -107,11 +108,13 @@ export default function MembersPage() {
         <div className="space-y-2">
           {users.map((u) => (
             <Card key={u.uid} className="flex items-center gap-3">
-              <Avatar name={u.displayName} size={38} />
-              <div className="flex-1 min-w-0">
-                <p className="truncate font-semibold">{u.displayName}</p>
-                <p className="truncate text-xs text-muted">{u.email}</p>
-              </div>
+              <Link href={`/spiller/${u.uid}`} className="flex min-w-0 flex-1 items-center gap-3">
+                <Avatar name={u.displayName} size={38} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{u.displayName}</p>
+                  <p className="truncate text-xs text-muted">{u.email}</p>
+                </div>
+              </Link>
               {u.role === "admin" ? <Badge tone="success">Admin</Badge> : <Badge>Medlem</Badge>}
               {u.uid !== profile?.uid && (
                 <Button
