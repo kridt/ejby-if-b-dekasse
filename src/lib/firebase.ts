@@ -4,8 +4,20 @@ import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
 
+const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+
+// Hvis nøglerne mangler (fx env-variabler ikke sat i Vercel), så lad være med at
+// crashe under build/prerender. getAuth() kaster ved tom apiKey, så vi bruger en
+// pladsholder hvis den mangler. Appen virker først rigtigt når de rigtige
+// NEXT_PUBLIC_FIREBASE_*-variabler er sat.
+if (!apiKey && typeof window !== "undefined") {
+  console.error(
+    "Firebase: NEXT_PUBLIC_FIREBASE_*-variabler mangler. Tilføj dem i .env.local (lokalt) eller i Vercel → Project → Settings → Environment Variables."
+  );
+}
+
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  apiKey: apiKey || "missing-firebase-api-key",
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
