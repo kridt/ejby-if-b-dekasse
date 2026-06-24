@@ -1,45 +1,30 @@
 /* Ejby IF Bødekasse — service worker
-   Phase 1: gør appen installerbar + simpel offline-skal.
-   Phase 2: håndterer push-notifikationer. */
+   Bevidst MINIMAL: gør appen installerbar (PWA) og håndterer push (Phase 2).
+   Den cacher IKKE sider — det undgår "stale build"-problemer efter deploys. */
 
-const CACHE = "ejby-bodekasse-v1";
-const APP_SHELL = ["/", "/login", "/offline"];
+const CACHE_PREFIX = "ejby-bodekasse-";
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(APP_SHELL)).catch(() => {})
-  );
+self.addEventListener("install", () => {
+  // Tag over med det samme, så nye versioner slår hurtigt igennem.
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-      )
+    (async () => {
+      // Ryd ALLE gamle caches (inkl. tidligere versioner der cachede HTML).
+      const keys = await caches.keys();
+      await Promise.all(
+        keys.filter((k) => k.startsWith(CACHE_PREFIX)).map((k) => caches.delete(k))
+      );
+      await self.clients.claim();
+    })()
   );
-  self.clients.claim();
 });
 
-// Netværk-først for navigation, fallback til cache/offline-side
-self.addEventListener("fetch", (event) => {
-  const { request } = event;
-  if (request.method !== "GET") return;
-
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((cache) => cache.put(request, copy));
-          return res;
-        })
-        .catch(() => caches.match(request).then((r) => r || caches.match("/offline")))
-    );
-  }
-});
+// Ingen fetch-caching: en tom handler er nok til at appen kan installeres,
+// mens alt indhold altid hentes friskt fra netværket.
+self.addEventListener("fetch", () => {});
 
 // ===== Push-notifikationer (Phase 2) =====
 self.addEventListener("push", (event) => {
