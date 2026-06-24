@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { PushToggle } from "@/components/PushToggle";
-import { Avatar, Badge, Button, Card, EmptyState, Input, Label, Spinner } from "@/components/ui";
+import { Avatar, Badge, Button, Card, EmptyState, Input, Label, SkeletonList } from "@/components/ui";
+import { useToast } from "@/components/Toast";
 import { useAuth } from "@/context/AuthContext";
 import {
   useClubSettings,
@@ -23,9 +24,10 @@ export default function ProfilePage() {
   const { data: myFines, loading: lf } = useFinesForUser(profile?.uid);
   const { data: myPayments } = usePaymentsForUser(profile?.uid);
 
+  const { success, error } = useToast();
+
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState("");
 
   const approvedFines = useMemo(() => myFines.filter((f) => f.status === "approved"), [myFines]);
   const totalFined = approvedFines.reduce((s, f) => s + f.amount, 0);
@@ -37,7 +39,6 @@ export default function ProfilePage() {
 
   async function handlePay(e: React.FormEvent) {
     e.preventDefault();
-    setMsg("");
     const amt = Number(amount);
     if (!profile || !season || !amt || amt <= 0) return;
     setBusy(true);
@@ -50,10 +51,10 @@ export default function ProfilePage() {
         console.warn("Kunne ikke sende notifikation til admins:", err);
       }
       setAmount("");
-      setMsg("Tak! Din betaling afventer nu bekræftelse fra en admin.");
+      success("Betaling registreret — afventer bekræftelse fra en admin.");
     } catch (err) {
       console.error(err);
-      setMsg("Kunne ikke registrere betalingen. Prøv igen.");
+      error("Kunne ikke registrere betalingen. Prøv igen.");
     } finally {
       setBusy(false);
     }
@@ -125,18 +126,23 @@ export default function ProfilePage() {
           >
             Betal hele beløbet ({formatKr(balance)})
           </button>
-          {msg && <p className="mt-2 text-sm text-primary">{msg}</p>}
         </Card>
       )}
 
       {/* Mine bøder */}
       <h2 className="mb-2 mt-6 font-bold">Mine bøder</h2>
       {lf ? (
-        <div className="flex justify-center py-6 text-primary">
-          <Spinner className="size-6" />
-        </div>
+        <SkeletonList rows={3} />
       ) : approvedFines.length === 0 ? (
-        <EmptyState title="Du har ingen bøder endnu" hint="Hold den gode stil! 💪" />
+        <EmptyState
+          title="Du har ingen bøder endnu"
+          hint="Hold den gode stil! 💪"
+          icon={
+            <svg className="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+          }
+        />
       ) : (
         <div className="space-y-2">
           {approvedFines
