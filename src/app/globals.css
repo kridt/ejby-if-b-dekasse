@@ -19,6 +19,21 @@
   --success: #157f3c;
   --warning: #c98a09;
   --warning-bg: #fdf6e3;
+
+  /* Podie-medaljer (tynde metalringe — aldrig fyldte klatter) */
+  --gold: #c9a227;
+  --silver: #9aa3a8;
+  --bronze: #b07a48;
+
+  /* Bane-gradient — kun bag podiet og crest-bjælken */
+  --pitch: linear-gradient(160deg, var(--primary-dark), var(--primary));
+
+  /* Safe-area (notch / home-indicator) */
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+
+  /* Én blød ambient-skygge — kun til hævede flader (saldo/pot-hero, podie-leder, sheets) */
+  --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(14, 77, 42, 0.1);
 }
 
 @theme inline {
@@ -36,6 +51,9 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-warning-bg: var(--warning-bg);
+  --color-gold: var(--gold);
+  --color-silver: var(--silver);
+  --color-bronze: var(--bronze);
   --font-sans: var(--font-geist-sans);
   --radius: 0.9rem;
 }
@@ -59,24 +77,77 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+  }
 }
 
 * {
   box-sizing: border-box;
 }
 
+/* ===== Fast 100dvh app-skal: hverken html eller body scroller =====
+   Kun den indre <main> (.app-scroll) scroller. Det dræber iOS gummiband-scroll
+   og Android pull-to-refresh, så appen føles native. */
 html {
+  height: 100%;
   -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  min-height: 100dvh;
-  /* Plads til bundnavigation på PWA */
-  padding-bottom: env(safe-area-inset-bottom);
   -webkit-font-smoothing: antialiased;
+  /* App-følelse: intet tekstvalg som standard (genaktiveres via .selectable) */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Den ene scroll-container */
+.app-scroll {
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Finans-indhold (navne, beløb, kommentarer, MobilePay-nr.) skal kunne kopieres */
+.selectable {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+/* Hævet flade-skygge */
+.shadow-raised {
+  box-shadow: var(--shadow-raised);
+}
+
+/* Bane-gradient util (podie + crest-bjælke) */
+.bg-pitch {
+  background-image: var(--pitch);
+}
+
+/* Native-feel på tappbare elementer + ingen billed-træk */
+button,
+a,
+[role="tab"],
+[role="button"],
+.tappable {
+  touch-action: manipulation;
+}
+
+img {
+  -webkit-user-drag: none;
+  user-select: none;
 }
 
 /* Pæn fokus-ring */
@@ -84,6 +155,53 @@ body {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
+
+/* ===== View Transitions — native-agtige rute-/elementovergange ===== */
+@keyframes vt-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes vt-slide-out-left {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+@keyframes vt-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes vt-slide-out-right {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+/* De retnings-baserede rute-overgange (nav-forward/back) wires til i morph-trinet
+   sammen med Reacts <ViewTransition transitionTypes=[...]>. Keyframes ovenfor er
+   klar til brug. (Holdt ude af Stream A for at undgå eksperimentelle selectors i
+   Lightning CSS før de er testet.) */
 
 @media (prefers-color-scheme: dark) {
   :root {

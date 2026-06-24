@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
+import { motion } from "motion/react";
 import { useAuth } from "@/context/AuthContext";
 import { FullScreenLoader, cn } from "@/components/ui";
 
@@ -12,7 +13,8 @@ const navItems = [
   { href: "/profil", label: "Min profil", icon: UserIcon },
 ];
 
-/** Beskytter ruter: kun loggede-ind brugere. Viser bundnavigation. */
+/** Native app-skal: fast 100dvh, grøn safe-area-bjælke, én scroll-container,
+ *  flydende bundnavigation. Beskytter ruter (kun loggede-ind brugere). */
 export function AppShell({ children, admin = false }: { children: ReactNode; admin?: boolean }) {
   const { user, profile, loading, isAdmin } = useAuth();
   const router = useRouter();
@@ -34,14 +36,27 @@ export function AppShell({ children, admin = false }: { children: ReactNode; adm
     : navItems;
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col">
-      <main className="flex-1 px-4 pb-28 pt-6">{children}</main>
+    <div className="relative mx-auto flex h-dvh w-full max-w-md flex-col bg-background">
+      {/* Grøn safe-area-bjælke under notchen (statuslinjen læser brand-grøn) */}
+      <div
+        aria-hidden
+        className="shrink-0 bg-primary"
+        style={{ height: "env(safe-area-inset-top)", viewTransitionName: "appchrome-top" } as React.CSSProperties}
+      />
 
+      {/* Den ENESTE scroll-container */}
+      <main className="app-scroll flex-1 px-4 pb-6 pt-5">{children}</main>
+
+      {/* Flydende bundnavigation */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur"
         aria-label="Hovednavigation"
+        className="shrink-0 border-t border-border bg-card/85 backdrop-blur-lg"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)", viewTransitionName: "appchrome-nav" } as React.CSSProperties}
       >
-        <div className="mx-auto grid max-w-md grid-cols-4">
+        <div
+          className="mx-auto grid"
+          style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
+        >
           {items.map((item) => {
             const active =
               item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
@@ -52,18 +67,31 @@ export function AppShell({ children, admin = false }: { children: ReactNode; adm
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex flex-col items-center gap-1 py-2.5 text-xs font-medium transition",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
-                  active ? "text-primary" : "text-muted"
+                  "relative flex items-center justify-center py-1.5",
+                  "focus-visible:outline-none"
                 )}
               >
-                <Icon className={cn("size-6 transition-transform", active && "scale-110")} aria-hidden="true" />
-                {item.label}
+                {active && (
+                  <motion.span
+                    layoutId="nav-pill"
+                    className="absolute inset-x-3 inset-y-1 -z-0 rounded-2xl bg-primary/10"
+                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                  />
+                )}
+                <motion.span
+                  whileTap={{ scale: 0.9 }}
+                  className={cn(
+                    "relative z-10 flex flex-col items-center gap-1 px-3 py-1 text-xs font-semibold transition-colors",
+                    active ? "text-primary" : "text-muted"
+                  )}
+                >
+                  <Icon className={cn("size-6 transition-transform", active && "scale-110")} aria-hidden="true" />
+                  {item.label}
+                </motion.span>
               </Link>
             );
           })}
         </div>
-        <div style={{ height: "env(safe-area-inset-bottom)" }} />
       </nav>
     </div>
   );

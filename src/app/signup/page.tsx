@@ -47,7 +47,7 @@ export default function SignupPage() {
     );
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-6 py-10">
+    <div className="app-scroll mx-auto flex h-dvh w-full max-w-md flex-col justify-center px-6 py-10">
       <div className="mb-8 flex flex-col items-center text-center">
         <ClubLogo size={84} />
         <h1 className="mt-4 text-2xl font-extrabold">Opret konto</h1>

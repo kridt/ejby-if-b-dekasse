@@ -14,17 +14,30 @@ export const metadata: Metadata = {
   applicationName: "Ejby Bødekasse",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    // Gennemsigtig statuslinje på iOS, så den grønne crest-bjælke fylder hele
+    // safe-area-toppen (statuslinjeteksten holdes læsbar mod den grønne bjælke).
+    statusBarStyle: "black-translucent",
     title: "Ejby Bødekasse",
+    // TODO (vedligeholder): generér apple-touch-startup-image splash-PNG'er
+    // (crest-på-grøn, lys+mørk) og tilføj dem her som startupImage: [...].
   },
   manifest: "/manifest.webmanifest",
+  // Sikrer at moderne Chrome også får web-app-capable (Next udsender allerede
+  // apple-mobile-web-app-capable via appleWebApp.capable).
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0e4d2a",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#0e4d2a" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b1410" },
+  ],
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  // maximumScale fjernet bevidst (a11y) — touch-action:manipulation håndterer
+  // 300ms-tap-delay uden at slå pinch-zoom fra.
   viewportFit: "cover",
 };
 
@@ -34,8 +47,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="da" className={`${geistSans.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
+    <html lang="da" className={`${geistSans.variable} antialiased`}>
+      <body>
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -9,8 +9,11 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#f4f7f4",
+    // Grøn launch-skærm (ingen hvid blink ved koldstart på Android).
+    background_color: "#0e4d2a",
     theme_color: "#0e4d2a",
+    // TODO (vedligeholder): tilføj screenshots: [{ src, sizes, type, form_factor: "narrow" }]
+    // (et Tavle-screenshot) for at låse op for Androids rige install-sheet.
     lang: "da",
     categories: ["sports", "lifestyle"],
     icons: [
