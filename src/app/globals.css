@@ -198,10 +198,9 @@ img {
   }
 }
 
-/* De retnings-baserede rute-overgange (nav-forward/back) wires til i morph-trinet
-   sammen med Reacts <ViewTransition transitionTypes=[...]>. Keyframes ovenfor er
-   klar til brug. (Holdt ude af Stream A for at undgå eksperimentelle selectors i
-   Lightning CSS før de er testet.) */
+/* Sideovergange håndteres med Motion (se AppShell) — pålideligt på tværs af
+   browsere. Reacts <ViewTransition> gav endnu ingen synlig animation i denne
+   Next-version, så vi bruger Motion i stedet. */
 
 @media (prefers-color-scheme: dark) {
   :root {

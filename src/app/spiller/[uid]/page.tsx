@@ -118,10 +118,8 @@ export default function PlayerPage({ params }: { params: Promise<{ uid: string }
         ‹ Tilbage til tavlen
       </Link>
 
-      {/* Large-title header. Avatar bærer en stabil vtName til den senere
-          morph fra Tavle-rækken (ingen ViewTransition-wrapper her). */}
       <header className="mb-5 flex items-center gap-3">
-        <Avatar name={name} size={64} vtName={`player-avatar-${uid}`} />
+        <Avatar name={name} size={64} />
         <div className="min-w-0 flex-1">
           <h1 className="selectable truncate text-[28px] font-extrabold leading-tight tracking-tight">{name}</h1>
           {player?.email && <p className="selectable truncate text-sm text-muted">{player.email}</p>}
@@ -138,11 +136,7 @@ export default function PlayerPage({ params }: { params: Promise<{ uid: string }
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs font-medium tracking-wide text-muted">Saldo</p>
-            <span
-              id={`player-amount-${uid}`}
-              className="mt-1 block"
-              style={{ viewTransitionName: `player-amount-${uid}` }}
-            >
+            <span className="mt-1 block">
               <MoneyCounter
                 value={balance.balance}
                 tone="auto"

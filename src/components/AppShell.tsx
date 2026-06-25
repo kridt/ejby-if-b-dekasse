@@ -41,17 +41,27 @@ export function AppShell({ children, admin = false }: { children: ReactNode; adm
       <div
         aria-hidden
         className="shrink-0 bg-primary"
-        style={{ height: "env(safe-area-inset-top)", viewTransitionName: "appchrome-top" } as React.CSSProperties}
+        style={{ height: "env(safe-area-inset-top)" }}
       />
 
-      {/* Den ENESTE scroll-container */}
-      <main className="app-scroll flex-1 px-4 pb-6 pt-5">{children}</main>
+      {/* Den ENESTE scroll-container. Sideindholdet glider blødt ind ved hver
+          navigation (Motion, key på pathname → animerer ved sideskift). */}
+      <main className="app-scroll flex-1 px-4 pb-6 pt-5">
+        <motion.div
+          key={pathname}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {children}
+        </motion.div>
+      </main>
 
       {/* Flydende bundnavigation */}
       <nav
         aria-label="Hovednavigation"
         className="shrink-0 border-t border-border bg-card/85 backdrop-blur-lg"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)", viewTransitionName: "appchrome-nav" } as React.CSSProperties}
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div
           className="mx-auto grid"

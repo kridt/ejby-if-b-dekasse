@@ -1,12 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Aktiverer Reacts <ViewTransition> (Next 16 kører på en React-canary der
-  // understøtter dette) — bruges til native-agtige rute-/elementovergange.
-  // Kræver IKKE react@canary installeret.
-  experimental: {
-    viewTransition: true,
-  },
+  /* Sideovergange håndteres med Motion (se AppShell), ikke Reacts eksperimentelle
+     ViewTransition — den gav endnu ingen synlig animation i Next 16.2.9. */
 };
 
 export default nextConfig;
