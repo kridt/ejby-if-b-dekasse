@@ -113,7 +113,7 @@ export function PushToggle() {
           {needsInstallFirst ? (
             <Link
               href="/installer"
-              className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-white px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-background"
+              className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-background"
             >
               Sådan installerer du appen
             </Link>

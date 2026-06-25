@@ -47,8 +47,10 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
-  // maximumScale fjernet bevidst (a11y) — touch-action:manipulation håndterer
-  // 300ms-tap-delay uden at slå pinch-zoom fra.
+  // Slå zoom fra for en mere native app-følelse (efter ønske).
+  // (Respekteres i standalone-PWA; Safari kan stadig zoome i normal browser.)
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
 };
 

@@ -143,19 +143,21 @@ function IosSteps({ container, reduce }: { container: Variants; reduce: boolean 
     <>
       <StepList container={container} reduce={reduce}>
         <Step n={1} reduce={reduce}>
-          Tryk på <span className="font-semibold text-foreground">Del</span>-ikonet{" "}
-          <ShareGlyph /> nederst (eller øverst-højre på iPad).
+          Tryk på <span className="font-semibold text-foreground">•••</span> til højre i adresselinjen.
         </Step>
         <Step n={2} reduce={reduce}>
+          Vælg <span className="font-semibold text-foreground">Del</span> <ShareGlyph />.
+        </Step>
+        <Step n={3} reduce={reduce}>
           Rul ned og vælg{" "}
           <span className="font-semibold text-foreground">«Føj til hjemmeskærm»</span>.
         </Step>
-        <Step n={3} reduce={reduce}>
-          Tryk <span className="font-semibold text-foreground">«Tilføj»</span> øverst i hjørnet.
+        <Step n={4} reduce={reduce}>
+          Tryk <span className="font-semibold text-foreground">«Tilføj»</span>.
         </Step>
       </StepList>
       <p className="mt-4 text-center text-xs text-muted">
-        Virker kun i Safari. Bruger du en anden browser, så åbn siden i Safari først.
+        Virker kun i Safari. På ældre iPhones kan du trykke direkte på Del-ikonet i værktøjslinjen.
       </p>
     </>
   );

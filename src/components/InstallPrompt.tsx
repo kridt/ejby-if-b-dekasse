@@ -2,8 +2,9 @@
 
 // Global installations-prompt. Drives udelukkende af usePwa()-storen.
 //  - Android/desktop: slankt afviseligt bund-banner med native "Installér".
-//  - iOS Safari: instruktivt bund-ark med kronen, tre danske trin og en pil
-//    mod Del-ikonet (nederst på iPhone, øverst-højre på iPad).
+//  - iOS Safari (iOS 26-flow): instruktivt bund-ark — ••• → Del → Føj til
+//    hjemmeskærm — med ikoner inline (ingen fast pil, da adresselinjen kan stå
+//    øverst eller nederst).
 //  - iOS in-app webview (Facebook/Instagram m.fl.): "Åbn i Safari" + kopiér link.
 // Vises aldrig når appen allerede kører standalone.
 
@@ -145,24 +146,31 @@ function AndroidBanner({
 // ---------------------------------------------------------------------------
 function IosInstallSheet({ onClose }: { onClose: () => void }) {
   const reduce = useReducedMotion();
-  // iPad: Del-ikonet sidder øverst-højre. iPhone: nederst i menulinjen.
-  const isIpad =
-    typeof navigator !== "undefined" &&
-    navigator.maxTouchPoints > 1 &&
-    /Macintosh/.test(navigator.userAgent);
 
+  // iOS 26-flow: Safari har ikke længere en synlig Del-knap — man åbner ••• -menuen
+  // (til højre i adresselinjen) → Del → Føj til hjemmeskærm. Vi viser ikonerne
+  // inline i stedet for en fast pil, da adresselinjen kan stå øverst eller nederst.
   const steps = [
     {
       n: "1",
       label: (
         <>
-          Tryk på <span className="font-semibold text-foreground">Del</span>-ikonet
+          Tryk på <span className="font-semibold text-foreground">•••</span> til højre i adresselinjen
+        </>
+      ),
+      icon: <MoreIcon className="size-5" />,
+    },
+    {
+      n: "2",
+      label: (
+        <>
+          Vælg <span className="font-semibold text-foreground">Del</span>
         </>
       ),
       icon: <ShareIcon className="size-5" />,
     },
     {
-      n: "2",
+      n: "3",
       label: (
         <>
           Vælg <span className="font-semibold text-foreground">«Føj til hjemmeskærm»</span>
@@ -171,10 +179,10 @@ function IosInstallSheet({ onClose }: { onClose: () => void }) {
       icon: <AddToHomeIcon className="size-5" />,
     },
     {
-      n: "3",
+      n: "4",
       label: (
         <>
-          Tryk <span className="font-semibold text-foreground">«Tilføj»</span> øverst i hjørnet
+          Tryk <span className="font-semibold text-foreground">«Tilføj»</span>
         </>
       ),
       icon: <CheckIcon className="size-5" />,
@@ -182,83 +190,42 @@ function IosInstallSheet({ onClose }: { onClose: () => void }) {
   ];
 
   return (
-    <>
-      {/* Pil mod Del-ikonet — bunden på iPhone, øverst-højre på iPad. */}
-      <ShareArrow ipad={isIpad} />
-      <Sheet open onClose={onClose} title="Føj Bødekassen til hjemmeskærmen">
-        <div className="mb-4 flex items-center gap-3">
-          <ClubLogo size={48} />
-          <p className="text-sm text-muted">
-            Installér appen, så har du altid bøderne lige ved hånden — og kan få notifikationer.
-          </p>
-        </div>
+    <Sheet open onClose={onClose} title="Føj Bødekassen til hjemmeskærmen">
+      <div className="mb-4 flex items-center gap-3">
+        <ClubLogo size={48} />
+        <p className="text-sm text-muted">
+          Installér appen, så har du altid bøderne lige ved hånden — og kan få notifikationer.
+        </p>
+      </div>
 
-        <ol className="space-y-2.5">
-          {steps.map((step, i) => (
-            <motion.li
-              key={step.n}
-              className="flex items-center gap-3 rounded-xl border border-border bg-background/60 px-3 py-2.5"
-              initial={reduce ? false : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={reduce ? { duration: 0 } : { delay: 0.05 * i, duration: 0.25 }}
-            >
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                {step.n}
-              </span>
-              <span className="flex-1 text-sm">{step.label}</span>
-              <span className="text-primary" aria-hidden="true">
-                {step.icon}
-              </span>
-            </motion.li>
-          ))}
-        </ol>
+      <ol className="space-y-2.5">
+        {steps.map((step, i) => (
+          <motion.li
+            key={step.n}
+            className="flex items-center gap-3 rounded-xl border border-border bg-background/60 px-3 py-2.5"
+            initial={reduce ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={reduce ? { duration: 0 } : { delay: 0.05 * i, duration: 0.25 }}
+          >
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+              {step.n}
+            </span>
+            <span className="flex-1 text-sm">{step.label}</span>
+            <span className="text-primary" aria-hidden="true">
+              {step.icon}
+            </span>
+          </motion.li>
+        ))}
+      </ol>
 
-        <Button variant="secondary" className="mt-4 w-full" onClick={onClose}>
-          Senere
-        </Button>
-      </Sheet>
-    </>
-  );
-}
+      <p className="mt-3 text-xs text-muted">
+        På ældre iPhones kan du trykke direkte på <span className="font-semibold text-foreground">Del</span>-ikonet i værktøjslinjen.
+      </p>
 
-/** Animeret pil der peger mod systemets Del-ikon. */
-function ShareArrow({ ipad }: { ipad: boolean }) {
-  const reduce = useReducedMotion();
-  const position = ipad
-    ? "right-4 top-[calc(env(safe-area-inset-top)+0.5rem)]"
-    : "bottom-[calc(env(safe-area-inset-bottom)+0.25rem)] left-1/2 -translate-x-1/2";
-  return (
-    <motion.div
-      aria-hidden="true"
-      className={`pointer-events-none fixed z-[80] ${position}`}
-      initial={reduce ? { opacity: 0 } : { opacity: 0, y: ipad ? -6 : 6 }}
-      animate={
-        reduce
-          ? { opacity: 1 }
-          : { opacity: 1, y: ipad ? [-6, 2, -6] : [6, -2, 6] }
-      }
-      transition={
-        reduce
-          ? { duration: 0.2 }
-          : { duration: 1.4, repeat: 4, repeatType: "loop", ease: "easeInOut" }
-      }
-    >
-      <svg
-        className="size-9 text-primary drop-shadow"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        {ipad ? (
-          <path d="M12 19V5m0 0l-5 5m5-5l5 5" />
-        ) : (
-          <path d="M12 5v14m0 0l-5-5m5 5l5-5" />
-        )}
-      </svg>
-    </motion.div>
+      <Button variant="secondary" className="mt-3 w-full" onClick={onClose}>
+        Senere
+      </Button>
+    </Sheet>
   );
 }
 
@@ -328,6 +295,16 @@ function CloseIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
       <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}
+
+function MoreIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <circle cx="5" cy="12" r="2" />
+      <circle cx="12" cy="12" r="2" />
+      <circle cx="19" cy="12" r="2" />
     </svg>
   );
 }
