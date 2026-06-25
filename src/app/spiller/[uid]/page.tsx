@@ -4,6 +4,8 @@ import { use, useMemo, useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { Avatar, Badge, Button, Card, EmptyState, Input, Label, Spinner } from "@/components/ui";
+import { MoneyCounter } from "@/components/MoneyCounter";
+import { CheckDraw } from "@/components/CheckDraw";
 import { useAuth } from "@/context/AuthContext";
 import {
   useCurrentSeason,
@@ -12,7 +14,16 @@ import {
   useUsers,
 } from "@/hooks/useFirestore";
 import { adminRegisterPayment, computeBalances } from "@/lib/data";
-import { formatDateTime, formatKr } from "@/lib/format";
+import { formatDate, formatKr } from "@/lib/format";
+
+/** Formaterer millisekunder fra historikken som en dato (eller "—"). */
+function fmtMillis(at: number): string {
+  return at ? formatDate(new Date(at)) : "—";
+}
+
+type HistoryEntry =
+  | { kind: "fine"; id: string; at: number; title: string; comment?: string; amount: number }
+  | { kind: "payment"; id: string; at: number; amount: number; confirmed: boolean };
 
 export default function PlayerPage({ params }: { params: Promise<{ uid: string }> }) {
   const { uid } = use(params);
@@ -45,25 +56,34 @@ export default function PlayerPage({ params }: { params: Promise<{ uid: string }
   }, [player, fines, payments, uid, name]);
 
   const approvedFines = useMemo(
-    () =>
-      fines
-        .filter((f) => f.status === "approved")
-        .slice()
-        .sort((a, b) => (b.approvedAt?.toMillis?.() ?? 0) - (a.approvedAt?.toMillis?.() ?? 0)),
+    () => fines.filter((f) => f.status === "approved"),
     [fines]
   );
 
-  const sortedPayments = useMemo(
-    () =>
-      payments
-        .slice()
-        .sort(
-          (a, b) =>
-            (b.confirmedAt?.toMillis?.() ?? b.claimedAt?.toMillis?.() ?? 0) -
-            (a.confirmedAt?.toMillis?.() ?? a.claimedAt?.toMillis?.() ?? 0)
-        ),
-    [payments]
-  );
+  // Kronologisk samlet historik (bøder + betalinger), nyeste først.
+  const history = useMemo<HistoryEntry[]>(() => {
+    const entries: HistoryEntry[] = [];
+    for (const f of approvedFines) {
+      entries.push({
+        kind: "fine",
+        id: f.id,
+        at: f.approvedAt?.toMillis?.() ?? 0,
+        title: f.reason,
+        comment: f.comment,
+        amount: f.amount,
+      });
+    }
+    for (const p of payments) {
+      entries.push({
+        kind: "payment",
+        id: p.id,
+        at: p.confirmedAt?.toMillis?.() ?? p.claimedAt?.toMillis?.() ?? 0,
+        amount: p.amount,
+        confirmed: p.status === "confirmed",
+      });
+    }
+    return entries.sort((a, b) => b.at - a.at);
+  }, [approvedFines, payments]);
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -90,6 +110,7 @@ export default function PlayerPage({ params }: { params: Promise<{ uid: string }
   }
 
   const loading = lf || lp;
+  const settled = balance.balance === 0 && balance.totalFined > 0;
 
   return (
     <AppShell>
@@ -97,23 +118,52 @@ export default function PlayerPage({ params }: { params: Promise<{ uid: string }
         ‹ Tilbage til tavlen
       </Link>
 
+      {/* Large-title header. Avatar bærer en stabil vtName til den senere
+          morph fra Tavle-rækken (ingen ViewTransition-wrapper her). */}
       <header className="mb-5 flex items-center gap-3">
-        <Avatar name={name} size={56} />
-        <div className="flex-1 min-w-0">
-          <h1 className="truncate text-xl font-extrabold leading-tight">{name}</h1>
-          {player?.email && <p className="truncate text-sm text-muted">{player.email}</p>}
+        <Avatar name={name} size={64} vtName={`player-avatar-${uid}`} />
+        <div className="min-w-0 flex-1">
+          <h1 className="selectable truncate text-[28px] font-extrabold leading-tight tracking-tight">{name}</h1>
+          {player?.email && <p className="selectable truncate text-sm text-muted">{player.email}</p>}
         </div>
       </header>
 
-      {/* Saldo */}
-      <Card className={balance.balance > 0 ? "border-danger/30 bg-danger-bg" : "border-primary/30 bg-primary/5"}>
-        <p className="text-xs font-medium text-muted">Saldo</p>
-        <p className={`mt-1 text-3xl font-extrabold ${balance.balance > 0 ? "text-danger" : "text-primary"}`}>
-          {balance.balance > 0 ? formatKr(balance.balance) : "Betalt op 🎉"}
-        </p>
+      {/* Saldo — rullende kronebeløb med automatisk farve (rød ved gæld, grøn ved 0). */}
+      <Card
+        raised
+        className={`relative overflow-hidden transition-colors duration-700 ${
+          settled ? "border-primary/30 bg-primary/5" : balance.balance > 0 ? "border-danger/30 bg-danger-bg" : "border-primary/30 bg-primary/5"
+        }`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-medium tracking-wide text-muted">Saldo</p>
+            <span
+              id={`player-amount-${uid}`}
+              className="mt-1 block"
+              style={{ viewTransitionName: `player-amount-${uid}` }}
+            >
+              <MoneyCounter
+                value={balance.balance}
+                tone="auto"
+                className="selectable text-3xl font-extrabold tracking-tight"
+              />
+            </span>
+            {settled && <p className="mt-1 text-base font-extrabold text-primary">Betalt op</p>}
+          </div>
+          {settled && (
+            <div className="shrink-0 text-primary">
+              <CheckDraw size={52} />
+            </div>
+          )}
+        </div>
         <div className="mt-3 flex gap-4 text-sm text-muted">
-          <span>Bøder i alt: <strong className="text-foreground">{formatKr(balance.totalFined)}</strong></span>
-          <span>Betalt: <strong className="text-foreground">{formatKr(balance.totalPaid)}</strong></span>
+          <span>
+            Bøder i alt: <strong className="selectable text-foreground">{formatKr(balance.totalFined)}</strong>
+          </span>
+          <span>
+            Betalt: <strong className="selectable text-foreground">{formatKr(balance.totalPaid)}</strong>
+          </span>
         </div>
       </Card>
 
@@ -155,55 +205,44 @@ export default function PlayerPage({ params }: { params: Promise<{ uid: string }
         </Card>
       )}
 
+      {/* Historik — kronologisk: bøder (rød) + betalinger (grøn) med datoer. */}
+      <h2 className="mb-2 mt-6 font-bold">Historik</h2>
       {loading ? (
         <div className="flex justify-center py-10 text-primary">
           <Spinner className="size-7" />
         </div>
+      ) : history.length === 0 ? (
+        <EmptyState title="Ingen historik endnu" hint="Bøder og betalinger vises her." />
       ) : (
-        <>
-          {/* Bøder */}
-          <h2 className="mb-2 mt-6 font-bold">Bøder ({approvedFines.length})</h2>
-          {approvedFines.length === 0 ? (
-            <EmptyState title="Ingen bøder" hint="Spilleren har ingen godkendte bøder." />
-          ) : (
-            <div className="space-y-2">
-              {approvedFines.map((f) => (
-                <Card key={f.id} className="flex items-center gap-3 py-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold">{f.reason}</p>
-                    {f.comment && <p className="text-sm text-muted">{f.comment}</p>}
-                    <p className="mt-0.5 text-xs text-muted">{formatDateTime(f.approvedAt)}</p>
-                  </div>
-                  <span className="font-bold text-danger">{formatKr(f.amount)}</span>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          {/* Betalinger */}
-          <h2 className="mb-2 mt-6 font-bold">Betalinger ({sortedPayments.length})</h2>
-          {sortedPayments.length === 0 ? (
-            <EmptyState title="Ingen betalinger" hint="Spilleren har ikke registreret betalinger endnu." />
-          ) : (
-            <div className="space-y-2">
-              {sortedPayments.map((p) => (
-                <Card key={p.id} className="flex items-center gap-3 py-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold">{formatKr(p.amount)}</p>
-                    <p className="mt-0.5 text-xs text-muted">
-                      {formatDateTime(p.confirmedAt ?? p.claimedAt)}
-                    </p>
-                  </div>
-                  {p.status === "confirmed" ? (
+        <div className="space-y-2">
+          {history.map((entry) =>
+            entry.kind === "fine" ? (
+              <Card key={`f-${entry.id}`} className="flex items-center gap-3 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="selectable font-semibold">{entry.title}</p>
+                  {entry.comment && <p className="selectable text-sm text-muted">{entry.comment}</p>}
+                  <p className="mt-0.5 text-xs text-muted">{fmtMillis(entry.at)}</p>
+                </div>
+                <span className="selectable font-bold text-danger">+{formatKr(entry.amount)}</span>
+              </Card>
+            ) : (
+              <Card key={`p-${entry.id}`} className="flex items-center gap-3 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="selectable font-semibold text-primary">Betaling</p>
+                  <p className="mt-0.5 text-xs text-muted">{fmtMillis(entry.at)}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {entry.confirmed ? (
                     <Badge tone="success">Bekræftet</Badge>
                   ) : (
                     <Badge tone="warning">Afventer</Badge>
                   )}
-                </Card>
-              ))}
-            </div>
+                  <span className="selectable font-bold text-primary">−{formatKr(entry.amount)}</span>
+                </div>
+              </Card>
+            )
           )}
-        </>
+        </div>
       )}
     </AppShell>
   );

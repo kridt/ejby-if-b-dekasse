@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Avatar, Button, Card, EmptyState, Label, PageHeader, Select, SkeletonList, Textarea, cn } from "@/components/ui";
+import { Sheet } from "@/components/Sheet";
+import { CheckDraw } from "@/components/CheckDraw";
 import { useToast } from "@/components/Toast";
 import { useAuth } from "@/context/AuthContext";
 import { useActiveCatalog, useCurrentSeason, useUsers } from "@/hooks/useFirestore";
@@ -22,6 +24,7 @@ export default function GivBodePage() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
+  const [catalogOpen, setCatalogOpen] = useState(false);
   const toast = useToast();
 
   const teammates = useMemo(
@@ -30,6 +33,21 @@ export default function GivBodePage() {
   );
   const selectedItem = catalog.find((c) => c.id === catalogId) ?? null;
   const target = users.find((u) => u.uid === targetUid) ?? null;
+
+  // Rolig haptik når kvitteringen vises (Android-only, guarded). Ingen konfetti
+  // — bøden er kun sendt til godkendelse, ikke fejret endnu.
+  const buzzed = useRef(false);
+  useEffect(() => {
+    if (done && !buzzed.current) {
+      buzzed.current = true;
+      try {
+        navigator.vibrate?.(10);
+      } catch {
+        /* ignore */
+      }
+    }
+    if (!done) buzzed.current = false;
+  }, [done]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -71,8 +89,10 @@ export default function GivBodePage() {
     return (
       <AppShell>
         <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-          <div className="flex size-20 items-center justify-center rounded-full bg-primary/10 text-4xl">⚽️</div>
-          <h2 className="mt-4 text-xl font-extrabold">Bøde sendt!</h2>
+          <div className="text-primary">
+            <CheckDraw size={88} />
+          </div>
+          <h2 className="mt-4 text-xl font-extrabold">Bøde sendt til godkendelse</h2>
           <p className="mt-1 max-w-xs text-sm text-muted">
             {target?.displayName} får bøden når en admin har godkendt den.
           </p>
@@ -105,7 +125,7 @@ export default function GivBodePage() {
           <div>
             <Label htmlFor="target">Hvem skal have en bøde?</Label>
             <Select id="target" value={targetUid} onChange={(e) => setTargetUid(e.target.value)} required>
-              <option value="">Vælg holdkammerat…</option>
+              <option key="__placeholder" value="">Vælg holdkammerat…</option>
               {teammates.map((u) => (
                 <option key={u.uid} value={u.uid}>
                   {u.displayName}
@@ -116,22 +136,27 @@ export default function GivBodePage() {
 
           <div>
             <Label>Hvilken bøde?</Label>
-            <div className="space-y-2">
-              {catalog.map((item) => (
-                <button
-                  type="button"
-                  key={item.id}
-                  onClick={() => setCatalogId(item.id)}
-                  className={cn(
-                    "flex w-full items-center justify-between rounded-xl border bg-card px-4 py-3 text-left transition",
-                    catalogId === item.id ? "border-primary ring-2 ring-primary/20" : "border-border"
-                  )}
-                >
-                  <span className="font-medium">{item.title}</span>
-                  <span className="font-bold text-primary">{formatKr(item.defaultAmount)}</span>
-                </button>
-              ))}
-            </div>
+            {/* Vælger der åbner kataloget i en bottom-sheet */}
+            <button
+              type="button"
+              onClick={() => setCatalogOpen(true)}
+              className={cn(
+                "flex w-full items-center justify-between rounded-xl border bg-card px-4 py-3 text-left transition",
+                selectedItem ? "border-primary ring-2 ring-primary/20" : "border-border"
+              )}
+            >
+              {selectedItem ? (
+                <>
+                  <span className="font-medium">{selectedItem.title}</span>
+                  <span className="font-bold text-primary">{formatKr(selectedItem.defaultAmount)}</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-muted">Vælg en bøde fra kataloget…</span>
+                  <span aria-hidden className="text-muted">›</span>
+                </>
+              )}
+            </button>
           </div>
 
           <div>
@@ -165,6 +190,33 @@ export default function GivBodePage() {
           </Button>
         </form>
       )}
+
+      {/* Katalog som native bottom-sheet med priskort */}
+      <Sheet open={catalogOpen} onClose={() => setCatalogOpen(false)} title="Vælg bøde">
+        <div className="space-y-2 pb-2">
+          {catalog.map((item) => {
+            const selected = catalogId === item.id;
+            return (
+              <Button
+                key={item.id}
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setCatalogId(item.id);
+                  setCatalogOpen(false);
+                }}
+                className={cn(
+                  "w-full justify-between !px-4 !py-3 text-left",
+                  selected ? "border-primary ring-2 ring-primary/30" : "border-border"
+                )}
+              >
+                <span className="font-medium">{item.title}</span>
+                <span className="font-bold text-primary">{formatKr(item.defaultAmount)}</span>
+              </Button>
+            );
+          })}
+        </div>
+      </Sheet>
     </AppShell>
   );
 }

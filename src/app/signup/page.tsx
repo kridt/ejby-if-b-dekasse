@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion, useReducedMotion } from "motion/react";
 import { useAuth } from "@/context/AuthContext";
 import { Button, Input, Label, Spinner } from "@/components/ui";
 import { ClubLogo } from "@/components/ClubLogo";
@@ -11,6 +12,7 @@ import { authError } from "@/app/login/page";
 export default function SignupPage() {
   const { signup, user, loading } = useAuth();
   const router = useRouter();
+  const reduce = useReducedMotion();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,9 +49,20 @@ export default function SignupPage() {
     );
 
   return (
-    <div className="app-scroll mx-auto flex h-dvh w-full max-w-md flex-col justify-center px-6 py-10">
+    <motion.div
+      className="app-scroll mx-auto flex h-dvh w-full max-w-md flex-col justify-center px-6 py-10"
+      initial={reduce ? { opacity: 0 } : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: "easeOut" }}
+    >
       <div className="mb-8 flex flex-col items-center text-center">
-        <ClubLogo size={84} />
+        <motion.div
+          initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.86 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: "spring", stiffness: 320, damping: 24 }}
+        >
+          <ClubLogo size={84} />
+        </motion.div>
         <h1 className="mt-4 text-2xl font-extrabold">Opret konto</h1>
         <p className="mt-1 text-sm text-muted">Bliv en del af bødekassen i Ejby IF</p>
       </div>
@@ -104,6 +117,6 @@ export default function SignupPage() {
           Log ind
         </Link>
       </p>
-    </div>
+    </motion.div>
   );
 }

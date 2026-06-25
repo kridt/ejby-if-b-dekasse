@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Card } from "@/components/ui";
 
 const steps = [
@@ -22,10 +23,11 @@ const steps = [
   },
 ];
 
-/** Sammenfoldelig "Sådan virker det"-hjælp. */
+/** Sammenfoldelig "Sådan virker det"-hjælp med fjeder-udvidelse. */
 export function HowItWorks() {
   const [open, setOpen] = useState(false);
   const panelId = useId();
+  const reduce = useReducedMotion();
 
   return (
     <Card className="p-0">
@@ -43,8 +45,8 @@ export function HowItWorks() {
           </svg>
         </span>
         <span className="flex-1 font-semibold">Sådan virker det</span>
-        <svg
-          className={`size-5 text-muted transition-transform ${open ? "rotate-180" : ""}`}
+        <motion.svg
+          className="size-5 text-muted"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -52,26 +54,43 @@ export function HowItWorks() {
           strokeLinecap="round"
           strokeLinejoin="round"
           aria-hidden="true"
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 26 }}
         >
           <path d="M6 9l6 6 6-6" />
-        </svg>
+        </motion.svg>
       </button>
 
-      {open && (
-        <ol id={panelId} className="space-y-3 border-t border-border px-4 py-4">
-          {steps.map((step, i) => (
-            <li key={step.title} className="flex gap-3">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                {i + 1}
-              </span>
-              <div>
-                <p className="text-sm font-semibold">{step.title}</p>
-                <p className="text-sm text-muted">{step.body}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      )}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="panel"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={
+              reduce
+                ? { duration: 0 }
+                : { type: "spring", stiffness: 260, damping: 30, opacity: { duration: 0.2 } }
+            }
+            className="overflow-hidden"
+          >
+            <ol id={panelId} className="space-y-3 border-t border-border px-4 py-4">
+              {steps.map((step, i) => (
+                <li key={step.title} className="flex gap-3">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                    {i + 1}
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold">{step.title}</p>
+                    <p className="text-sm text-muted">{step.body}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Card>
   );
 }
