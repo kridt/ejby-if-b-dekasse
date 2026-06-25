@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useDragControls, useReducedMotion } from "motion/react";
 
 /**
  * Native-agtig fjeder-bottom-sheet: gribehåndtag, træk-for-at-lukke, backdrop,
@@ -22,6 +22,7 @@ export function Sheet({
   const reduce = useReducedMotion();
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreFocus = useRef<HTMLElement | null>(null);
+  const dragControls = useDragControls();
 
   useEffect(() => {
     if (!open) return;
@@ -84,27 +85,41 @@ export function Sheet({
             aria-modal="true"
             aria-label={title}
             tabIndex={-1}
-            className="fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[88dvh] w-full max-w-md overflow-y-auto rounded-t-[1.5rem] border border-border bg-card shadow-raised outline-none"
-            style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}
+            className="fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[88dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[1.5rem] border border-border bg-card shadow-raised outline-none"
             initial={reduce ? { opacity: 0 } : { y: "100%" }}
             animate={reduce ? { opacity: 1 } : { y: 0 }}
             exit={reduce ? { opacity: 0 } : { y: "100%" }}
             transition={{ type: "spring", stiffness: 400, damping: 38 }}
             drag={reduce ? false : "y"}
+            // Træk styres KUN fra gribehåndtaget, så indholdet kan scrolles frit.
+            dragListener={false}
+            dragControls={dragControls}
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0, bottom: 0.6 }}
             onDragEnd={(_, info) => {
               if (info.offset.y > 120 || info.velocity.y > 700) onClose();
             }}
           >
-            {/* Gribehåndtag */}
-            <div className="flex justify-center pt-2.5 pb-1">
+            {/* Gribehåndtag — træk herfra for at lukke (større tryk-område) */}
+            <div
+              onPointerDown={(e) => {
+                if (!reduce) dragControls.start(e);
+              }}
+              style={{ touchAction: "none" }}
+              className="flex shrink-0 cursor-grab touch-none justify-center pb-2 pt-3 active:cursor-grabbing"
+            >
               <div className="h-1.5 w-10 rounded-full bg-border" aria-hidden />
             </div>
             {title && (
-              <h2 className="px-5 pb-1 pt-1 text-lg font-extrabold tracking-tight">{title}</h2>
+              <h2 className="shrink-0 px-5 pb-1 text-lg font-extrabold tracking-tight">{title}</h2>
             )}
-            <div className="px-5 pt-2">{children}</div>
+            {/* Eneste scroll-område i sheeten */}
+            <div
+              className="min-h-0 overflow-y-auto overscroll-contain px-5 pt-2"
+              style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}
+            >
+              {children}
+            </div>
           </motion.div>
         </>
       )}
