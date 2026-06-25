@@ -67,7 +67,7 @@ export function AppShell({ children, admin = false }: { children: ReactNode; adm
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative flex items-center justify-center py-1.5",
+                  "group relative flex items-center justify-center py-1.5",
                   "focus-visible:outline-none"
                 )}
               >
@@ -81,7 +81,8 @@ export function AppShell({ children, admin = false }: { children: ReactNode; adm
                 <motion.span
                   whileTap={{ scale: 0.9 }}
                   className={cn(
-                    "relative z-10 flex flex-col items-center gap-1 px-3 py-1 text-xs font-semibold transition-colors",
+                    "relative z-10 flex flex-col items-center gap-1 rounded-xl px-3 py-1 text-xs font-semibold transition-colors",
+                    "group-focus-visible:ring-2 group-focus-visible:ring-primary group-focus-visible:ring-offset-1",
                     active ? "text-primary" : "text-muted"
                   )}
                 >

@@ -10,15 +10,16 @@ let confettiFn: ConfettiFn | null = null;
 export async function fireConfetti() {
   if (typeof window === "undefined") return;
 
+  // Respektér "reducér bevægelse" — også for haptik (ikke-essentiel feedback).
+  const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (reduce) return;
+
   // Haptik (kun Android — iOS ignorerer stille; må aldrig bære betydning alene).
   try {
     navigator.vibrate?.(15);
   } catch {
     /* ignore */
   }
-
-  const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-  if (reduce) return;
 
   if (!confettiFn) {
     const mod = (await import("canvas-confetti")) as unknown as { default: ConfettiFn };

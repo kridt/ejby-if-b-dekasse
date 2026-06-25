@@ -65,9 +65,9 @@ function detectAndroid(): boolean {
 function detectInAppBrowser(): boolean {
   if (typeof navigator === "undefined") return false;
   const ua = navigator.userAgent;
-  const isWebView = /\bFBAN|\bFBAV|Instagram|\bLine\//i.test(ua);
-  const looksLikeSafariOrChrome = /Safari|CriOS/i.test(ua);
-  return isWebView && !looksLikeSafariOrChrome;
+  // iOS in-app webviews (WKWebView) bærer ALTID "Safari/604.1"-token, så vi må
+  // IKKE udelukke på Safari-substring — app-tokens er specifikke nok i sig selv.
+  return /\bFBAN|\bFBAV|FBIOS|Instagram|\bLine\/|GSA\//i.test(ua);
 }
 
 function detectSafari(): boolean {

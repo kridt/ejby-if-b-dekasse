@@ -240,7 +240,7 @@ function ShareArrow({ ipad }: { ipad: boolean }) {
       transition={
         reduce
           ? { duration: 0.2 }
-          : { duration: 1.4, repeat: Infinity, ease: "easeInOut" }
+          : { duration: 1.4, repeat: 4, repeatType: "loop", ease: "easeInOut" }
       }
     >
       <svg

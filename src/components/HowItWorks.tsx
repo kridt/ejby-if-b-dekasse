@@ -71,7 +71,7 @@ export function HowItWorks() {
             transition={
               reduce
                 ? { duration: 0 }
-                : { type: "spring", stiffness: 260, damping: 30, opacity: { duration: 0.2 } }
+                : { height: { duration: 0.26, ease: [0.4, 0, 0.2, 1] }, opacity: { duration: 0.18 } }
             }
             className="overflow-hidden"
           >

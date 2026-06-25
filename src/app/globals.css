@@ -6,7 +6,7 @@
   --foreground: #0e1a12;
   --card: #ffffff;
   --border: #e2e8e3;
-  --muted: #6b7c70;
+  --muted: #50605a; /* mørknet for WCAG AA-kontrast på lys baggrund */
 
   /* Klubfarver — fra Ejby IF Fodbold-logoet */
   --primary: #0e4d2a; /* Ejby dyb skovgrøn */

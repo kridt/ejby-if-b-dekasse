@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { AppShell } from "@/components/AppShell";
@@ -89,11 +89,10 @@ export default function BoardPage() {
         <StatCard label="Mangler at blive betalt" value={totals.outstandingTotal} tone="danger" />
       </div>
 
-      {/* Faner — segmenteret kontrol med glidende pille */}
+      {/* Faner — segmenteret kontrol (toggle-gruppe) med glidende pille */}
       <SegmentedControl
         layoutId="tab-pill"
         ariaLabel="Tavle-visninger"
-        role="tablist"
         className="mb-4"
         value={tab}
         onChange={setTab}
@@ -205,18 +204,16 @@ function SegmentedControl<T extends string>({
 /* Nøgletals-kort                                                      */
 /* ------------------------------------------------------------------ */
 
-/** Læser én gang om bødekassen allerede er rullet i denne session. */
+/** Læser (uden at skrive) om bødekassen allerede er rullet i denne session.
+ *  Ren funktion — sikker i useState-initializer, også under StrictMode. */
 function readFirstThisSession(): boolean {
   if (typeof window === "undefined") return false;
   try {
-    if (sessionStorage.getItem("pot-rolled") !== "1") {
-      sessionStorage.setItem("pot-rolled", "1");
-      return true;
-    }
+    return sessionStorage.getItem("pot-rolled") !== "1";
   } catch {
     // sessionStorage utilgængelig (privat tilstand) — spring koldstart over.
+    return false;
   }
-  return false;
 }
 
 /** Bødekasse-kortet: rul fra 0 én gang pr. session + engangs guld-skin. */
@@ -225,6 +222,17 @@ function PotCard({ label, value }: { label: string; value: number }) {
   // Koldstart (rul fra 0) kun ved første visning i sessionen — afgøres ved mount.
   const [coldStart] = useState(readFirstThisSession);
   const [shimmer, setShimmer] = useState(() => coldStart && !reduce);
+
+  // Markér "rullet" som en side-effekt (ikke under render).
+  useEffect(() => {
+    if (coldStart) {
+      try {
+        sessionStorage.setItem("pot-rolled", "1");
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [coldStart]);
 
   return (
     <Card className="relative overflow-hidden border-primary/30 bg-primary/5">
@@ -296,7 +304,6 @@ function RankList({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 500, damping: 40 }}
-            style={{ contentVisibility: "auto" } as React.CSSProperties}
           >
             <Link href={`/spiller/${b.uid}`} className="block">
               <Card className="flex items-center gap-3 py-3 transition hover:border-primary/40">
