@@ -35,17 +35,19 @@ export async function sendPushToRecipients(
   if (entries.length === 0) return { successCount: 0, failureCount: 0 };
 
   const tokens = entries.map((e) => e.token);
+  // VIGTIGT: send som ren DATA-besked (ingen `notification`-felt). Ellers viser
+  // FCM selv en notifikation OG vores onBackgroundMessage viser én mere = dobbelt.
+  // Service-workeren (firebase-messaging-sw.js) viser nu beskeden præcis én gang.
   const res = await messaging.sendEachForMulticast({
     tokens,
-    notification: { title: message.title, body: message.body },
     data: {
       title: message.title,
       body: message.body,
       url: message.url ?? "/",
+      icon: "/icon-192.png",
     },
     webpush: {
       fcmOptions: { link: message.url ?? "/" },
-      notification: { icon: "/icon-192.png", badge: "/icon-192.png" },
     },
   });
 
