@@ -98,7 +98,7 @@ export function PushToggle() {
             </p>
           ) : state === "no-vapid" ? (
             <p className="mt-1 text-sm text-muted">
-              Notifikationer er ikke konfigureret på serveren endnu. Kontakt en admin.
+              Push-notifikationer er ikke aktiveret på serveren endnu. De tændes snart.
             </p>
           ) : state === "error" ? (
             <p className="mt-1 text-sm text-danger">
