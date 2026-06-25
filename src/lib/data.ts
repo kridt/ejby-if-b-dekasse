@@ -104,8 +104,8 @@ export async function proposeFine(params: {
   amount: number;
   comment: string;
   seasonId: string;
-}) {
-  await addDoc(finesCol, {
+}): Promise<string> {
+  const ref = await addDoc(finesCol, {
     targetUid: params.target.uid,
     targetName: params.target.displayName,
     proposedByUid: params.proposer.uid,
@@ -118,6 +118,7 @@ export async function proposeFine(params: {
     seasonId: params.seasonId,
     createdAt: serverTimestamp(),
   });
+  return ref.id;
 }
 
 /** Admin godkender en bøde og kan justere beløbet. */
@@ -138,8 +139,12 @@ export async function rejectFine(fineId: string) {
 
 // ---- Betalinger ----
 /** Spiller markerer "Jeg har betalt" (status: claimed). */
-export async function claimPayment(payer: UserProfile, amount: number, seasonId: string) {
-  await addDoc(paymentsCol, {
+export async function claimPayment(
+  payer: UserProfile,
+  amount: number,
+  seasonId: string
+): Promise<string> {
+  const ref = await addDoc(paymentsCol, {
     payerUid: payer.uid,
     payerName: payer.displayName,
     amount,
@@ -148,6 +153,7 @@ export async function claimPayment(payer: UserProfile, amount: number, seasonId:
     seasonId,
     claimedAt: serverTimestamp(),
   });
+  return ref.id;
 }
 
 /**

@@ -59,7 +59,7 @@ export default function GivBodePage() {
     }
     setBusy(true);
     try {
-      await proposeFine({
+      const fineId = await proposeFine({
         target,
         proposer: profile,
         catalogItem: selectedItem,
@@ -70,7 +70,7 @@ export default function GivBodePage() {
       });
       // Notificér admins om den nye bøde (ikke-blokerende).
       try {
-        await sendNotify({ type: "fine-proposed" });
+        await sendNotify({ type: "fine-proposed", fineId });
       } catch (err) {
         console.warn("Kunne ikke sende notifikation til admins:", err);
       }

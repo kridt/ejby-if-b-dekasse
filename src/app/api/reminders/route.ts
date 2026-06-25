@@ -73,9 +73,10 @@ export async function GET(request: Request) {
         if (recipients[0].tokens.length === 0) return;
 
         const result = await sendPushToRecipients(recipients, {
-          title: "Påmindelse: du skylder til bødekassen 💰",
-          body: `Din saldo er ${kr(balance)}. Husk at betale via MobilePay.`,
+          title: "Bødekassen kalder 💸",
+          body: `Du skylder ${kr(balance)}. Smut en tur på MobilePay og markér det i appen 😇`,
           url: "/profil",
+          tag: "reminder",
         });
         notified += 1;
         totalSuccess += result.successCount;

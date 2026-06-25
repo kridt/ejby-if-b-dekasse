@@ -65,10 +65,10 @@ export default function ProfilePage() {
     if (!profile || !season || !amt || amt <= 0) return;
     setBusy(true);
     try {
-      await claimPayment(profile, amt, season.id);
+      const paymentId = await claimPayment(profile, amt, season.id);
       // Notificér admins (ikke-blokerende — betalingen er allerede gemt).
       try {
-        await sendNotify({ type: "payment-claimed" });
+        await sendNotify({ type: "payment-claimed", paymentId });
       } catch (err) {
         console.warn("Kunne ikke sende notifikation til admins:", err);
       }

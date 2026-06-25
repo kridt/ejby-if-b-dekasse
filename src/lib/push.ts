@@ -8,6 +8,8 @@ export interface PushMessage {
   body: string;
   /** Hvor brugeren havner ved klik (default "/"). */
   url?: string;
+  /** Notifikations-tag: samme tag erstatter hinanden (fx påmindelser). */
+  tag?: string;
 }
 
 /** En modtager = en bruger-uid + dennes registrerede FCM-tokens. */
@@ -45,6 +47,7 @@ export async function sendPushToRecipients(
       body: message.body,
       url: message.url ?? "/",
       icon: "/icon-192.png",
+      tag: message.tag ?? "",
     },
     webpush: {
       fcmOptions: { link: message.url ?? "/" },

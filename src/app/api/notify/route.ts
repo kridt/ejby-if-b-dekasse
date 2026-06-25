@@ -82,6 +82,19 @@ export async function POST(request: Request) {
     return [{ uid: snap.id, tokens: snap.get("fcmTokens") ?? [] }];
   }
 
+  // Saldo for en spiller = sum(godkendte bøder) - sum(bekræftede betalinger).
+  async function balanceFor(uid: string): Promise<number> {
+    const [finesSnap, paySnap] = await Promise.all([
+      db.collection("fines").where("targetUid", "==", uid).where("status", "==", "approved").get(),
+      db.collection("payments").where("payerUid", "==", uid).where("status", "==", "confirmed").get(),
+    ]);
+    let fined = 0;
+    finesSnap.forEach((d) => (fined += (d.get("amount") as number) ?? 0));
+    let paid = 0;
+    paySnap.forEach((d) => (paid += (d.get("amount") as number) ?? 0));
+    return fined - paid;
+  }
+
   try {
     switch (body.type) {
       // Admin har godkendt en bøde -> notificér den bødede spiller.
@@ -101,40 +114,62 @@ export async function POST(request: Request) {
           reason: string;
           amount: number;
         };
-        const recipients = await userRecipient(fine.targetUid);
+        const [recipients, balance] = await Promise.all([
+          userRecipient(fine.targetUid),
+          balanceFor(fine.targetUid),
+        ]);
         const result = await sendPushToRecipients(recipients, {
-          title: "Du har fået en bøde ⚽️",
-          body: `${fine.reason} — ${kr(fine.amount)}`,
+          title: "Av, en bøde! 🟨",
+          body: `«${fine.reason}» kostede dig ${kr(fine.amount)}. Du skylder nu ${kr(balance)} til kassen 💸`,
           url: "/profil",
+          tag: `fine-${body.fineId}`,
         });
         return NextResponse.json({ ok: true, ...result });
       }
 
-      // Medlem har foreslået en bøde -> notificér alle admins.
+      // Medlem har foreslået en bøde -> notificér alle admins (med detaljer).
       case "fine-proposed": {
-        const recipients = await adminRecipients();
-        const result = await sendPushToRecipients(recipients, {
-          title: "Ny bøde afventer godkendelse",
-          body: "Et medlem har foreslået en ny bøde.",
-          url: "/admin/godkendelser",
-        });
-        return NextResponse.json({ ok: true, ...result });
-      }
-
-      // Medlem har markeret en betaling -> notificér alle admins.
-      case "payment-claimed": {
-        let payerName = "Et medlem";
-        if (body.paymentId) {
-          const paySnap = await db.collection("payments").doc(body.paymentId).get();
-          if (paySnap.exists) payerName = paySnap.get("payerName") ?? payerName;
-        } else {
-          payerName = callerSnap.get("displayName") ?? payerName;
+        let line = "Et medlem har foreslået en ny bøde.";
+        if (body.fineId) {
+          const fineSnap = await db.collection("fines").doc(body.fineId).get();
+          if (fineSnap.exists) {
+            const f = fineSnap.data() as {
+              proposedByName?: string;
+              targetName?: string;
+              reason?: string;
+              amount?: number;
+            };
+            line = `${f.proposedByName ?? "Et medlem"} vil give ${f.targetName ?? "en spiller"} en bøde: «${f.reason ?? "bøde"}» (${kr(f.amount ?? 0)}).`;
+          }
         }
         const recipients = await adminRecipients();
         const result = await sendPushToRecipients(recipients, {
-          title: "Betaling markeret",
-          body: `${payerName} har markeret en betaling.`,
+          title: "Ny bøde i kø 🟨",
+          body: `${line} Godkend den i appen 👀`,
           url: "/admin/godkendelser",
+          tag: body.fineId ? `proposed-${body.fineId}` : "proposed",
+        });
+        return NextResponse.json({ ok: true, ...result });
+      }
+
+      // Medlem har markeret en betaling -> notificér alle admins (med beløb).
+      case "payment-claimed": {
+        let payerName = callerSnap.get("displayName") ?? "Et medlem";
+        let amountText = "";
+        if (body.paymentId) {
+          const paySnap = await db.collection("payments").doc(body.paymentId).get();
+          if (paySnap.exists) {
+            payerName = paySnap.get("payerName") ?? payerName;
+            const amt = paySnap.get("amount") as number | undefined;
+            if (typeof amt === "number") amountText = ` på ${kr(amt)}`;
+          }
+        }
+        const recipients = await adminRecipients();
+        const result = await sendPushToRecipients(recipients, {
+          title: "Penge på vej 💰",
+          body: `${payerName} siger de har betalt${amountText}. Bekræft det i appen ✅`,
+          url: "/admin/godkendelser",
+          tag: body.paymentId ? `payment-${body.paymentId}` : "payment",
         });
         return NextResponse.json({ ok: true, ...result });
       }

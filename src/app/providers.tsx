@@ -5,6 +5,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { ToastProvider } from "@/components/Toast";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { ForegroundNotifications } from "@/components/ForegroundNotifications";
 import type { ReactNode } from "react";
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -16,6 +17,7 @@ export function Providers({ children }: { children: ReactNode }) {
         <ToastProvider>
           {children}
           <InstallPrompt />
+          <ForegroundNotifications />
         </ToastProvider>
       </AuthProvider>
     </MotionConfig>
