@@ -33,10 +33,10 @@ export const metadata: Metadata = {
     startupImage: APPLE_SPLASH,
   },
   manifest: "/manifest.webmanifest",
-  // Sikrer at moderne Chrome også får web-app-capable (Next udsender allerede
-  // apple-mobile-web-app-capable via appleWebApp.capable).
+  // Next 16 udsender kun "mobile-web-app-capable" via appleWebApp.capable.
+  // iOS kræver den apple-præfiksede for standalone-tilstand + splash-skærme.
   other: {
-    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-capable": "yes",
   },
 };
 
