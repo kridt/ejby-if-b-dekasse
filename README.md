@@ -73,5 +73,5 @@ Husk at tilføje dit Vercel-domæne under Firebase → Authentication → **Sett
 Saldo beregnes klient-side: **godkendte bøder − bekræftede betalinger**.
 
 ## Næste faser
-- **Phase 2:** Push-notifikationer (ny bøde, godkendelse mangler, betalingspåmindelser) via Firebase Cloud Messaging. Service worker er allerede forberedt.
+- **Phase 2:** Push-notifikationer (ny bøde, afventer godkendelse, betaling markeret) via Firebase Cloud Messaging. Service worker er allerede forberedt.
 - **Phase 3:** Sæson-arkivvisning, billed-bevis på bøder, badges/animationer.

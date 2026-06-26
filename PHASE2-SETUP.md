@@ -17,7 +17,6 @@ Environment Variables** (produktion).
 | --- | --- | --- |
 | `NEXT_PUBLIC_FIREBASE_VAPID_KEY` | offentlig | Klienten — henter FCM-token |
 | `FIREBASE_SERVICE_ACCOUNT` | hemmelig (base64) | Serveren — `firebase-admin` |
-| `CRON_SECRET` | hemmelig | Serveren — beskytter `/api/reminders` |
 
 De eksisterende `NEXT_PUBLIC_FIREBASE_*`-variabler (apiKey, authDomain, projectId,
 storageBucket, messagingSenderId, appId) skal også være sat — de bruges allerede af
@@ -56,21 +55,6 @@ FIREBASE_SERVICE_ACCOUNT=eyJ0eXBlIjoic2VydmljZV9hY2NvdW50Iiwi...
 > Serveren afkoder base64 → JSON og bruger `cert(...)`. Private-key-newlines
 > håndteres automatisk. JSON'en hardcodes ALDRIG i koden.
 
-### 3. `CRON_SECRET`
-
-En tilfældig hemmelig streng der beskytter cron-endpointet:
-
-```bash
-openssl rand -hex 32
-```
-
-```
-CRON_SECRET=...din-tilfældige-hemmelighed...
-```
-
-Vercel sender automatisk `Authorization: Bearer $CRON_SECRET` med på cron-kald
-til `/api/reminders`, så endpointet er beskyttet mod uvedkommende.
-
 ## Triggere
 
 | Hændelse | Hvem får besked | Route |
@@ -78,9 +62,6 @@ til `/api/reminders`, så endpointet er beskyttet mod uvedkommende.
 | Admin godkender en bøde | Den bødede spiller | `POST /api/notify` (`fine-approved`) |
 | Medlem foreslår en bøde | Alle admins | `POST /api/notify` (`fine-proposed`) |
 | Medlem markerer en betaling | Alle admins | `POST /api/notify` (`payment-claimed`) |
-| Ugentlig påmindelse (mandag 17:00) | Spillere med gæld | `GET /api/reminders` (Vercel Cron) |
-
-Cron-tidspunktet defineres i `vercel.json` (`0 17 * * 1` = mandag kl. 17:00 UTC).
 
 ## Sådan tester man push
 
@@ -100,10 +81,8 @@ Cron-tidspunktet defineres i `vercel.json` (`0 17 * * 1` = mandag kl. 17:00 UTC)
 - `src/lib/firebaseAdmin.ts` — lazy `firebase-admin`-init på serveren.
 - `src/lib/push.ts` — server: multicast-afsendelse + oprydning af døde tokens.
 - `src/app/api/notify/route.ts` — verificeret notifikations-endpoint.
-- `src/app/api/reminders/route.ts` — cron-beskyttet påmindelses-endpoint.
 - `src/components/PushToggle.tsx` — "Aktivér notifikationer"-kort på Profil.
 - `public/firebase-messaging-sw.js` — FCM baggrunds-service-worker.
-- `vercel.json` — ugentlig cron til `/api/reminders`.
 
 ## Firestore-sikkerhedsregler (anbefaling)
 

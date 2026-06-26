@@ -8,7 +8,7 @@ export interface PushMessage {
   body: string;
   /** Hvor brugeren havner ved klik (default "/"). */
   url?: string;
-  /** Notifikations-tag: samme tag erstatter hinanden (fx påmindelser). */
+  /** Notifikations-tag: samme tag erstatter hinanden (fx samme bøde). */
   tag?: string;
 }
 

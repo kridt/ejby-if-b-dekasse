@@ -39,7 +39,7 @@ if (firebaseConfig.apiKey && firebaseConfig.projectId) {
       icon: data.icon || "/icon-192.png",
       badge: "/icon-192.png",
       vibrate: [100, 50, 100],
-      // Samme tag erstatter en tidligere notifikation (fx påmindelser stacker ikke).
+      // Samme tag erstatter en tidligere notifikation (fx samme bøde stacker ikke).
       tag: data.tag || undefined,
       renotify: data.tag ? true : undefined,
       data: { url: data.url || "/" },
